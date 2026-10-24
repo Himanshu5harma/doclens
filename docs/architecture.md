@@ -1,6 +1,6 @@
 # Planned architecture
 
-This document describes the target design. The current implementation is a package scaffold only.
+This document describes the target design. The manifest reader and HTML downloader are implemented; parsing, indexing, retrieval, and answers remain planned. The downloader saves raw bytes with source metadata, fetch time, and a content hash. See the README for the command and file layout.
 
 ## Indexing
 

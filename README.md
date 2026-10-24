@@ -2,7 +2,7 @@
 
 A RAG assistant for technical documentation that compares versions, answers with source citations, and measures retrieval and answer quality.
 
-**Status: project setup.** The repository contains a Python scaffold and a learning roadmap. Document ingestion, retrieval, generation, version comparisons, and evaluation are planned features; no quality scores or working RAG demo are claimed yet.
+**Status: corpus downloading.** The repository contains a curated two-page starter manifest and a downloader that saves raw HTML with provenance. Parsing, retrieval, generation, version comparisons, and evaluation are planned features; no quality scores or working RAG demo are claimed yet.
 
 ## The problem
 
@@ -35,7 +35,40 @@ python -m pip install -e .
 python -m doclens
 ```
 
-The current command prints the project status and next milestone. It does not query documents or call an LLM. No API key is needed for this scaffold.
+Without a subcommand, the command prints the project status. No API key is needed for downloading documents.
+
+## Download the starter corpus
+
+From the repository root, run:
+
+```bash
+uv run python -m doclens fetch
+```
+
+The downloader validates `corpus/sources.json`, then fetches each listed page without crawling links. The starter corpus contains the Python 3.12 and 3.13 `pathlib` reference pages. This is a small working example; the roadmap's larger corpus and release notes are still to come.
+
+Each source produces two files under ignored `data/`, for example:
+
+```text
+data/raw/python/3.12/pathlib.html
+data/raw/python/3.12/pathlib.html.metadata.json
+```
+
+The HTML is saved as bytes so later parsing can be checked against the original content. The metadata contains the manifest record, final response URL, UTC fetch timestamp, HTTP status, content type, byte count, and SHA-256 hash. The hash fingerprints the downloaded bytes so changes can be detected even when the page URL stays the same. The final response URL records redirects; it is not an extracted HTML canonical link.
+
+Running the command again refreshes the same files. This stores the latest download, not an archive of every snapshot. Empty or non-HTML responses and network errors stop the command with an error. Previously completed sources remain on disk; a failed network request does not overwrite an existing download. Each file is replaced atomically, but HTML and metadata are two separate writes; their hashes should be checked when consuming the files.
+
+To use another manifest (its download paths are still relative to the repository root):
+
+```bash
+uv run python -m doclens fetch --manifest corpus/sources.json
+```
+
+Run the offline downloader checks with:
+
+```bash
+uv run python -m unittest discover -s tests -v
+```
 
 ## How we will build it
 
@@ -61,9 +94,11 @@ Open a new Codex chat in this repository and say “Continue from the current ch
 ```text
 doclens/
   AGENTS.md             Instructions and learning workflow for Codex chats
+  corpus/               Curated source manifest
   docs/                 Architecture, milestones, and learning notes
   evals/                Evaluation design; labeled examples come later
-  src/doclens/          Python package scaffold
+  src/doclens/          Manifest reader, downloader, and CLI
+  tests/                Offline downloader checks
   pyproject.toml        Project metadata and packaging
 ```
 

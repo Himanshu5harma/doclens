@@ -11,10 +11,10 @@ Build one milestone at a time. Run it, inspect intermediate output, and explain 
 
 ## Milestone 1: Select and ingest a corpus
 
-- [ ] Select one product and two documented releases.
+- [x] Select one product and two documented releases: Python 3.12 and 3.13.
 - [ ] Start with 10 to 20 useful pages per release, including reference material and release notes.
-- [ ] Record URLs, version labels, document type, source terms, and intended local paths in a manifest.
-- [ ] Fetch only the curated URLs; save raw files and provenance.
+- [x] Record URLs, version labels, document type, source terms, and intended local paths in a manifest (two starter pages; expand with the corpus).
+- [x] Fetch only the curated URLs; save raw files and provenance (both starter pages verified).
 - [ ] Extract headings, paragraphs, and code blocks while removing navigation noise.
 - [ ] Inspect several parsed pages manually against the originals.
 

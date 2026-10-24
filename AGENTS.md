@@ -15,8 +15,8 @@ Inspect the actual files relevant to the checkpoint before treating a task as co
 
 DocLens is a learning and portfolio project: a version-aware RAG assistant for technical documentation. The user wants to demonstrate understanding of RAG while learning LangGraph.
 
-- Default to teaching one small, runnable step at a time. The user wants to write and understand the implementation themselves.
-- Explain what the step accomplishes and why each important decision is made, then provide a small example or exercise and one concrete way to check it.
+- Teach one complete, useful feature at a time. The user found file-by-file exercises too granular; group the design, implementation, and verification into one lesson (for example, a downloader for all manifest sources with provenance).
+- Explain what the feature accomplishes and why each important decision is made, then implement when requested and show a concrete way to run and inspect it. Preserve the user's goal of understanding the code.
 - Review the user's code and command output before advancing dependent work. Never assume that showing a snippet means the user created the file.
 - Answer conceptual questions plainly, then return to the current step without losing the checkpoint.
 - Do not implement whole milestones or generate large amounts of application code unless the user asks you to. Explicit requests to edit, fix, or set up files authorize that work.
@@ -49,6 +49,7 @@ From the repository root:
 ```bash
 uv sync
 uv run python -m doclens
+uv run python -m doclens fetch
 ```
 
 Once the user has created the manifest:
