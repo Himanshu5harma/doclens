@@ -52,10 +52,15 @@ The current command prints the project status and next milestone. It does not qu
 
 See [the roadmap](docs/roadmap.md), [the planned architecture](docs/architecture.md), and [the evaluation plan](evals/README.md).
 
+## Continuing in a new chat
+
+Open a new Codex chat in this repository and say “Continue from the current checkpoint.” [AGENTS.md](AGENTS.md) records the project instructions and the preference for small, explained, user-written implementation steps. It directs the assistant to read [the current checkpoint](docs/progress.md) and the project docs before continuing. Keep the checkpoint current as work is completed; use [learning notes](docs/learning-notes.md) for your own explanations and experiments.
+
 ## Repository layout
 
 ```text
 doclens/
+  AGENTS.md             Instructions and learning workflow for Codex chats
   docs/                 Architecture, milestones, and learning notes
   evals/                Evaluation design; labeled examples come later
   src/doclens/          Python package scaffold

@@ -1,0 +1,22 @@
+{
+  "sources": [
+    {
+      "source_id": "python-3.12-pathlib",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/pathlib.html",
+      "local_path": "data/raw/python/3.12/pathlib.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.13-pathlib",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/pathlib.html",
+      "local_path": "data/raw/python/3.13/pathlib.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    }
+  ]
+}
