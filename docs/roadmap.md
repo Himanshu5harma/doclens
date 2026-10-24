@@ -7,7 +7,7 @@ Build one milestone at a time. Run it, inspect intermediate output, and explain 
 - [x] Define the product and planned demo.
 - [x] Create the Python package scaffold.
 - [x] Record architecture and evaluation goals.
-- [ ] Confirm that the development environment runs locally.
+- [x] Confirm that the development environment runs locally.
 
 ## Milestone 1: Select and ingest a corpus
 
