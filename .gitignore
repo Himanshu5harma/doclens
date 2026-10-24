@@ -1,0 +1,30 @@
+# Python and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Downloaded corpus, model caches, indexes, and generated reports
+data/
+.cache/
+outputs/
+
+# Local editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
