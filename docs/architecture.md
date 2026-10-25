@@ -1,6 +1,6 @@
 # Planned architecture
 
-This document describes the target design. The manifest reader and HTML downloader are implemented; parsing, indexing, retrieval, and answers remain planned. The downloader saves raw bytes with source metadata, fetch time, and a content hash. See the README for the command and file layout.
+This document describes the target design. Manifest-driven ingestion is implemented for 20 curated Python documentation pages. `doclens ingest` runs the existing downloader and Python/Sphinx parser in sequence for each source; separate commands expose each stage. Chunking, indexing, retrieval, and answers remain planned. The downloader saves raw bytes with source metadata, fetch time, and a content hash. The parser verifies this provenance and extracts sections with heading paths, typed content blocks, and version-specific source anchors. See the README for commands and file layouts and [the corpus review](corpus.md) for the validated scope.
 
 ## Indexing
 

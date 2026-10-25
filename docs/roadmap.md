@@ -12,13 +12,15 @@ Build one milestone at a time. Run it, inspect intermediate output, and explain 
 ## Milestone 1: Select and ingest a corpus
 
 - [x] Select one product and two documented releases: Python 3.12 and 3.13.
-- [ ] Start with 10 to 20 useful pages per release, including reference material and release notes.
-- [x] Record URLs, version labels, document type, source terms, and intended local paths in a manifest (two starter pages; expand with the corpus).
-- [x] Fetch only the curated URLs; save raw files and provenance (both starter pages verified).
-- [ ] Extract headings, paragraphs, and code blocks while removing navigation noise.
-- [ ] Inspect several parsed pages manually against the originals.
+- [x] Start with 10 to 20 useful pages per release, including reference material and release notes (10 per release: nine references and What’s New).
+- [x] Record URLs, version labels, document type, source terms, and intended local paths in a manifest (20 sources).
+- [x] Fetch only the curated URLs; save raw files and provenance (all 20 pages verified).
+- [x] Extract headings, paragraphs, and code blocks while removing navigation noise (Python/Sphinx parser; all 20 pages).
+- [x] Inspect several parsed pages manually against the originals (eight samples across both versions; see [corpus review](corpus.md)).
 
 Done when: one repeatable command creates inspectable documents with correct version and source metadata.
+
+Completed for the selected scope on 2026-10-25: `uv run python -m doclens ingest`. Verification results and remaining parser limits are recorded in [the corpus review](corpus.md).
 
 Explain: What information would disappear if we converted every HTML page to plain text without structure?
 
@@ -79,7 +81,7 @@ Done when: a report isolates the effect of each change and includes concrete suc
 
 Done when: the graph handles each path predictably and produces traceable results without unbounded loops.
 
-## Milestone 7: Present the portfolio
+## Milestone 7: Present the demo and results
 
 - [ ] Add a small interface with visible citations and version selection.
 - [ ] Document setup, corpus scope, architecture, and a reproducible evaluation command.

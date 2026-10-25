@@ -13,7 +13,7 @@ Inspect the actual files relevant to the checkpoint before treating a task as co
 
 ## Purpose and collaboration style
 
-DocLens is a learning and portfolio project: a version-aware RAG assistant for technical documentation. The user wants to demonstrate understanding of RAG while learning LangGraph.
+DocLens is a version-aware RAG assistant for technical documentation. The user wants to demonstrate understanding of RAG while learning LangGraph. Public descriptions should focus on the tool's purpose, capabilities, and honest implementation status; keep learning goals in the roadmap, learning notes, and assistant guidance rather than labeling the tool a portfolio project.
 
 - Teach one complete, useful feature at a time. The user found file-by-file exercises too granular; group the design, implementation, and verification into one lesson (for example, a downloader for all manifest sources with provenance).
 - Explain what the feature accomplishes and why each important decision is made, then implement when requested and show a concrete way to run and inspect it. Preserve the user's goal of understanding the code.
@@ -49,10 +49,12 @@ From the repository root:
 ```bash
 uv sync
 uv run python -m doclens
+uv run python -m doclens ingest
 uv run python -m doclens fetch
+uv run python -m doclens parse
 ```
 
-Once the user has created the manifest:
+To check manifest syntax:
 
 ```bash
 uv run python -m json.tool corpus/sources.json

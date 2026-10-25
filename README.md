@@ -1,8 +1,8 @@
 # DocLens
 
-A RAG assistant for technical documentation that compares versions, answers with source citations, and measures retrieval and answer quality.
+A version-aware RAG assistant for technical documentation, with source citations and retrieval evaluation.
 
-**Status: corpus downloading.** The repository contains a curated two-page starter manifest and a downloader that saves raw HTML with provenance. Parsing, retrieval, generation, version comparisons, and evaluation are planned features; no quality scores or working RAG demo are claimed yet.
+**Status: corpus ingestion implemented.** The curated corpus has 20 official Python documentation pages across versions 3.12 and 3.13. One command downloads raw HTML with provenance and parses structured sections. Chunking, retrieval, generation, version comparisons, and evaluation remain planned; no quality scores or working RAG demo are claimed yet.
 
 ## The problem
 
@@ -35,9 +35,21 @@ python -m pip install -e .
 python -m doclens
 ```
 
-Without a subcommand, the command prints the project status. No API key is needed for downloading documents.
+Without a subcommand, the command prints the project status. No API key is needed for downloading or parsing documents.
 
-## Download the starter corpus
+## Ingest the corpus
+
+From the repository root:
+
+```bash
+uv run python -m doclens ingest
+```
+
+This validates the manifest, then downloads and parses every source. Each release has the same nine library references plus its What’s New page. See [the corpus scope and inspection record](docs/corpus.md) for the selection, exclusions, and verified results. No model API is called.
+
+The separate commands below let you inspect or repeat either stage. `ingest`, `fetch`, and `parse` all accept `--manifest PATH`. Re-running ingestion refreshes the same files; upstream documentation changes can produce different hashes.
+
+## Download the corpus
 
 From the repository root, run:
 
@@ -45,7 +57,7 @@ From the repository root, run:
 uv run python -m doclens fetch
 ```
 
-The downloader validates `corpus/sources.json`, then fetches each listed page without crawling links. The starter corpus contains the Python 3.12 and 3.13 `pathlib` reference pages. This is a small working example; the roadmap's larger corpus and release notes are still to come.
+The downloader validates `corpus/sources.json`, then fetches each listed page without crawling links. The corpus covers `pathlib`, `os.path`, `glob`, `shutil`, `tempfile`, `json`, `re`, `datetime`, `argparse`, and What’s New for each release.
 
 Each source produces two files under ignored `data/`, for example:
 
@@ -54,9 +66,9 @@ data/raw/python/3.12/pathlib.html
 data/raw/python/3.12/pathlib.html.metadata.json
 ```
 
-The HTML is saved as bytes so later parsing can be checked against the original content. The metadata contains the manifest record, final response URL, UTC fetch timestamp, HTTP status, content type, byte count, and SHA-256 hash. The hash fingerprints the downloaded bytes so changes can be detected even when the page URL stays the same. The final response URL records redirects; it is not an extracted HTML canonical link.
+The HTML is saved as bytes so later parsing can be checked against the original content. The metadata contains the manifest record, final response URL, UTC fetch timestamp, HTTP status, content type, byte count, and SHA-256 hash. The hash fingerprints the downloaded bytes so changes can be detected even when the page URL stays the same. The final response URL records redirects; it is not an extracted HTML canonical link. Before reading or saving content, the downloader checks that this URL stays on the requested HTTPS host and port. For Python sources it must also retain the manifest's `/{version}/` path prefix; redirects to another release or the moving `/3/` alias are rejected.
 
-Running the command again refreshes the same files. This stores the latest download, not an archive of every snapshot. Empty or non-HTML responses and network errors stop the command with an error. Previously completed sources remain on disk; a failed network request does not overwrite an existing download. Each file is replaced atomically, but HTML and metadata are two separate writes; their hashes should be checked when consuming the files.
+Running the command again refreshes the same files. This stores the latest download, not an archive of every snapshot. Empty or non-HTML responses and network errors stop the command with an error. Interrupted HTTP reads and other HTTP protocol failures produce a readable error identifying the source, with a nonzero exit status. Previously completed sources remain on disk; a failed network request does not overwrite an existing download. Each file is replaced atomically, but HTML and metadata are two separate writes; the parser rejects a mismatched pair after an interrupted write, preserving any previous parsed output.
 
 To use another manifest (its download paths are still relative to the repository root):
 
@@ -64,7 +76,44 @@ To use another manifest (its download paths are still relative to the repository
 uv run python -m doclens fetch --manifest corpus/sources.json
 ```
 
-Run the offline downloader checks with:
+## Parse the downloaded pages
+
+After downloading, run from the repository root:
+
+```bash
+uv run python -m doclens parse
+```
+
+This command works offline. It verifies the raw HTML's SHA-256 hash and size against its metadata, checks the metadata against the manifest, and extracts only the article's main region. It writes one structured document per source:
+
+```text
+data/parsed/python/3.12/pathlib.html.json
+data/parsed/python/3.13/pathlib.html.json
+```
+
+Each document retains the original source metadata and groups content into sections with heading paths and source anchors. Blocks distinguish paragraphs, API signatures, code, bare list items, and simple table rows. Code indentation, line breaks, and interactive prompts are preserved. Navigation, sidebar content, scripts, styles, and permalink symbols are excluded. Citation URLs retain the manifest's explicit version: the pages' HTML canonical links point to `/3/`, which could describe a different release.
+
+Inspect the Python 3.13 URI example with:
+
+```bash
+uv run python - <<'PY'
+import json
+from pathlib import Path
+
+document = json.loads(Path("data/parsed/python/3.13/pathlib.html.json").read_text())
+for section in document["sections"]:
+    for block in section["blocks"]:
+        if block["anchor"] == "pathlib.Path.from_uri":
+            print(block["kind"], block["url"])
+            print(block["text"])
+PY
+```
+
+The parser uses Beautiful Soup with Python's `html.parser` and targets the current Python/Sphinx layout. It fails on pages without the expected article region, rather than treating the entire page as evidence. Images are not interpreted, complex table relationships are not modeled, and future documentation layouts may need a new adapter. Repeating `parse` with unchanged inputs and parser produces the same JSON files. Parsed sections are not yet retrieval chunks.
+
+On a failure, completed sources remain available and the command exits with an error. A hash or source-metadata mismatch requires re-fetching or correcting the manifest before parsing.
+
+Run the offline ingestion checks with:
 
 ```bash
 uv run python -m unittest discover -s tests -v
@@ -81,7 +130,7 @@ uv run python -m unittest discover -s tests -v
 | 4: Answers | Grounded generation, citations, insufficient-evidence behavior | Distinguish a plausible answer from a supported answer |
 | 5: Experiments | Hybrid search and reranking comparisons | Measure quality, latency, and cost tradeoffs |
 | 6: LangGraph | Explicit state, routing, bounded retries, version comparison | Orchestrate the workflow and inspect failures |
-| 7: Portfolio | Usable demo, reproducible results, failure analysis | Explain the complete system and its limitations |
+| 7: Demo and results | Usable demo, reproducible results, failure analysis | Explain the complete system and its limitations |
 
 See [the roadmap](docs/roadmap.md), [the planned architecture](docs/architecture.md), and [the evaluation plan](evals/README.md).
 
@@ -97,8 +146,8 @@ doclens/
   corpus/               Curated source manifest
   docs/                 Architecture, milestones, and learning notes
   evals/                Evaluation design; labeled examples come later
-  src/doclens/          Manifest reader, downloader, and CLI
-  tests/                Offline downloader checks
+  src/doclens/          Manifest reader, downloader, parser, and CLI
+  tests/                Offline downloader, parser, and ingestion checks
   pyproject.toml        Project metadata and packaging
 ```
 

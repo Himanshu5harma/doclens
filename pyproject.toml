@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "A version-aware RAG assistant for technical documentation"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "beautifulsoup4>=4.14,<5",
+]
 
 [project.scripts]
 doclens = "doclens.__main__:main"

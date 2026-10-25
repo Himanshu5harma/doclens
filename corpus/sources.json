@@ -10,12 +10,174 @@
       "source_terms_url": "https://docs.python.org/3.12/license.html"
     },
     {
+      "source_id": "python-3.12-os-path",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/os.path.html",
+      "local_path": "data/raw/python/3.12/os.path.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-glob",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/glob.html",
+      "local_path": "data/raw/python/3.12/glob.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-shutil",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/shutil.html",
+      "local_path": "data/raw/python/3.12/shutil.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-tempfile",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/tempfile.html",
+      "local_path": "data/raw/python/3.12/tempfile.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-json",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/json.html",
+      "local_path": "data/raw/python/3.12/json.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-re",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/re.html",
+      "local_path": "data/raw/python/3.12/re.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-datetime",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/datetime.html",
+      "local_path": "data/raw/python/3.12/datetime.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-argparse",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.12/library/argparse.html",
+      "local_path": "data/raw/python/3.12/argparse.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
+      "source_id": "python-3.12-whatsnew",
+      "product": "python",
+      "version": "3.12",
+      "document_type": "release_notes",
+      "url": "https://docs.python.org/3.12/whatsnew/3.12.html",
+      "local_path": "data/raw/python/3.12/whatsnew.html",
+      "source_terms_url": "https://docs.python.org/3.12/license.html"
+    },
+    {
       "source_id": "python-3.13-pathlib",
       "product": "python",
       "version": "3.13",
       "document_type": "reference",
       "url": "https://docs.python.org/3.13/library/pathlib.html",
       "local_path": "data/raw/python/3.13/pathlib.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-os-path",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/os.path.html",
+      "local_path": "data/raw/python/3.13/os.path.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-glob",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/glob.html",
+      "local_path": "data/raw/python/3.13/glob.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-shutil",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/shutil.html",
+      "local_path": "data/raw/python/3.13/shutil.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-tempfile",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/tempfile.html",
+      "local_path": "data/raw/python/3.13/tempfile.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-json",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/json.html",
+      "local_path": "data/raw/python/3.13/json.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-re",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/re.html",
+      "local_path": "data/raw/python/3.13/re.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-datetime",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/datetime.html",
+      "local_path": "data/raw/python/3.13/datetime.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-argparse",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "reference",
+      "url": "https://docs.python.org/3.13/library/argparse.html",
+      "local_path": "data/raw/python/3.13/argparse.html",
+      "source_terms_url": "https://docs.python.org/3.13/license.html"
+    },
+    {
+      "source_id": "python-3.13-whatsnew",
+      "product": "python",
+      "version": "3.13",
+      "document_type": "release_notes",
+      "url": "https://docs.python.org/3.13/whatsnew/3.13.html",
+      "local_path": "data/raw/python/3.13/whatsnew.html",
       "source_terms_url": "https://docs.python.org/3.13/license.html"
     }
   ]
