@@ -52,6 +52,7 @@ uv run python -m doclens
 uv run python -m doclens ingest
 uv run python -m doclens fetch
 uv run python -m doclens parse
+uv run python -m doclens chunk
 ```
 
 To check manifest syntax:

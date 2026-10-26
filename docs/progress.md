@@ -1,6 +1,6 @@
 # Current learning checkpoint
 
-Last updated: 2026-10-25 (Asia/Kolkata).
+Last updated: 2026-10-26 (Asia/Kolkata).
 
 ## Goal and working agreement
 
@@ -10,7 +10,7 @@ Public descriptions focus on DocLens's purpose and honest capabilities, rather t
 
 ## Verified implementation
 
-Milestone 1 is complete for the selected corpus. The latest live run of `uv run python -m doclens ingest` downloaded and parsed all 20 manifest sources. No chunking, embeddings, index, retrieval, answer generation, evaluation results, or LangGraph workflow exist yet.
+Milestone 1 is complete and was reviewed with no blocking findings for the selected corpus. The live run of `uv run python -m doclens ingest` downloaded and parsed all 20 manifest sources. Milestone 2 now has typed document/chunk records and a verified baseline chunker. Embeddings, indexing, retrieval, answer generation, evaluation results, and LangGraph remain unimplemented.
 
 The components are:
 
@@ -19,7 +19,9 @@ The components are:
 - `src/doclens/fetch.py`: downloads raw bytes with a 30-second socket timeout. Before reading or writing, final URLs must retain the requested HTTPS host/port and Python version prefix. Empty and non-HTML responses are rejected. HTTP protocol exceptions, including interrupted reads, become readable source-specific errors through the CLI.
 - `src/doclens/files.py`: shared atomic file replacement. HTML and metadata are separate writes, not a single transaction; consumers must check their hashes. Old snapshots are not archived.
 - `src/doclens/parse.py`: verifies raw size/hash and source metadata, selects the Python/Sphinx main article region, and saves structured JSON sections with heading paths and typed blocks. It preserves API signatures, code indentation/newlines/prompts, actual source anchors, source metadata, and version-specific citation URLs. Paragraphs, signatures, code, bare list items, and simple table rows remain distinct.
-- `src/doclens/__main__.py`: `ingest` downloads then parses each source in order. Separate `fetch` and offline `parse` commands remain available. All accept `--manifest PATH`, with paths relative to the repository root.
+- `src/doclens/records.py`: frozen standard-library `Source`, `Block`, `Section`, `Document`, `ChunkPiece`, and `Chunk` dataclasses, a block-kind enum, and explicit validation of parsed JSON at the adapter boundary. The ingestion parser's JSON format remains unchanged. A document is one page, a section is author-defined heading context, and a chunk is a passage prepared for later retrieval.
+- `src/doclens/chunk.py`: `chunk_document()` is the pure baseline algorithm; `chunk_source()` checks raw/sidecar/parsed provenance, loads typed records, and atomically replaces one source's chunk bundle. Pieces carry source block indices and exact half-open character offsets, permitting loss/duplication checks.
+- `src/doclens/__main__.py`: `ingest` downloads then parses each source in order. Separate `fetch`, offline `parse`, and offline `chunk` commands remain available. All accept `--manifest PATH`, with paths relative to the repository root. `chunk` also accepts `--max-chars` and an optional exact `--source-id`.
 - `pyproject.toml` / `uv.lock`: direct dependency `beautifulsoup4>=4.14,<5`, currently locked to 4.15.0, using Python's built-in `html.parser`.
 
 ## Corpus and validation
@@ -46,9 +48,25 @@ Local outputs are ignored by Git:
 
 The manifest SHA-256 for the reviewed run is `25f48fd84536b623d9efc056ac8d5f775d71217aae48c4c37bb30ec1d9b3daa8`.
 
-The offline suite has 22 passing tests. These cover downloader refresh/provenance, redirect rejection and allowed redirects, HTTP read failures and previous-file preservation, manifest validation, parser structure and code whitespace, unsupported/empty layouts, altered raw content, version metadata mismatch, deterministic offline parsing, and complete-ingestion success and failure. Ingestion tests verify that invalid manifests make no network requests and that a later parse failure leaves earlier completed documents available.
+The offline suite has 41 passing tests: the existing 22 ingestion checks plus 19 chunking checks. Chunking covers exact size boundaries including headers/separators, whitespace and Unicode splitting, oversized code/signatures/table rows, section/anchor boundaries, metadata, deterministic IDs and duplicate occurrences, update behavior, stale provenance, complete output replacement, separate policy directories, and the offline CLI. The earlier ingestion checks remain passing.
 
 The user's earlier review recommendations are resolved. The response fixture now returns a version-appropriate final URL. Failure tests also exercise interruption between HTML and metadata writes (the parser rejects the pair and preserves prior parsed output), and a two-source fetch whose second read fails (first success remains valid and previous second-source files are preserved).
+
+## Verified chunking baseline
+
+The selected `section-anchor-v1` policy uses a 2,000-character target, including repeated heading/anchor context and separators, with no overlap. It packs adjacent blocks without crossing a section or effective anchor. Oversized prose splits at whitespace, falling back to characters for long words; code, signatures, and table rows stay whole and are flagged oversized if necessary. A target too small for heading context fails clearly. Characters are not model tokens, and no retrieval quality has been measured.
+
+| Release | Documents | Chunks | Oversized |
+| --- | ---: | ---: | ---: |
+| 3.12 | 10 | 720 | 1 |
+| 3.13 | 10 | 754 | 1 |
+| Total | 20 | 1,474 | 2 |
+
+The real-corpus audit reconstructed all 7,099 parsed blocks without gaps or overlap, preserved all 650 code examples as whole pieces, checked source metadata/hashes and heading/anchor context, and found all 1,474 IDs unique. A second run produced byte-identical bundles for every source. Rendered lengths ranged from 46 to 6,015 characters, median 499. The two oversized chunks hold the original long datetime examples. The Python 3.13 `Path.from_uri` sample is 937 characters and retains its signature, explanation, code, version note, and explicit version citation.
+
+Chunk outputs live under ignored `data/chunks/section-anchor-v1-2000/python/<version>/<page>.html.json`. Alternative targets get separate directories, such as `section-anchor-v1-2500`. The latest manual audit details are in ignored `data/reports/chunk-review.json`; the command does not generate that report automatically. The full policy, record fields, code entry points, ID behavior, limitations, and inspection commands are documented in [the chunking guide](chunking.md).
+
+IDs fingerprint source identity, policy, context, and scoped passage content; duplicate occurrences get distinct IDs. Fetch time, raw snapshot hash, document-wide hash, and absolute positions are excluded, so unaffected passages can retain IDs after an unrelated edit or earlier insertion. Changed content/context or policy changes affected IDs, possibly through repacking. Always refresh provenance and offsets even when IDs are unchanged. Re-running replaces the source's whole bundle, dropping outdated IDs from that file. A future index must upsert current payloads and remove old source IDs absent from the current set. Cached outputs for removed manifest sources are not automatically pruned.
 
 ## Decisions and limits to retain
 
@@ -58,7 +76,8 @@ The user's earlier review recommendations are resolved. The response fixture now
 - `source_terms_url` records the external documents' license terms, independently of DocLens's own code license. The user agreed to keep the link. Recording it has no fee; future API/hosting costs are separate.
 - Answers should cite the retrieved evidence supporting their claims, not list the whole corpus. Local paths and license metadata generally stay internal.
 - The parser is scoped to observed Python/Sphinx layouts. Images are not interpreted and complex table relationships are not modeled. Source presence/absence must not be inferred solely from retrieval results.
-- Raw HTML is retained for debugging. Parsed sections are not retrieval chunks yet. No retrieval or answer-quality scores have been measured.
+- Raw HTML is retained for debugging. Parsed sections feed the new chunker; its typed chunks are inspectable local records, with no embedding/index/retrieval component. No retrieval or answer-quality scores have been measured.
+- The character target is a soft limit for structured blocks. Oversized examples require an explicit policy when a future embedding model's input limit is chosen. No-overlap and anchor boundaries can produce small or context-limited chunks; these are baseline tradeoffs to evaluate, not proven optimal choices.
 - Keep `docs/learning-notes.md` for the user's own explanations; do not invent understanding or overwrite those notes.
 
 ## Commands and tool-environment notes
@@ -68,6 +87,8 @@ From the repository root:
 ```bash
 uv run python -m doclens ingest
 uv run python -m doclens parse
+uv run python -m doclens chunk
+uv run python -m doclens chunk --source-id python-3.13-pathlib
 uv run python -m unittest discover -s tests -v
 ```
 
@@ -75,6 +96,6 @@ In this tool environment, the default uv cache is outside the writable sandbox. 
 
 ## Next feature
 
-Begin Milestone 2 with typed document/chunk records and a chunker as one complete learning unit. Read the parsed JSON and [architecture](architecture.md), explain document vs. section vs. chunk, choose and record a simple baseline chunking policy, preserve source/version/heading/anchor metadata and code structure, use stable identifiers, and expose inspectable output with meaningful checks.
+The requested typed-record/chunking learning unit is implemented and verified. Review or explain the actual chunks with the user using [the inspection example](chunking.md#run-and-inspect), without repeating the build. The user's own explanations and evaluation of the tradeoffs are not assumed.
 
-Do not repeat corpus selection, downloader, or parser work. Do not jump to embedding providers, answer generation, or LangGraph before the chunking inputs and output are understood. Keep feature-sized lessons and update this checkpoint after meaningful progress.
+When the user is ready, continue Milestone 2 with embedding-model selection and a version-filtered persistent retrieval baseline, including typed search-result records. Address model input limits for the two oversized chunks before embedding; record model/configuration and explain cost/local-resource tradeoffs. No model or storage provider has been selected. Keep answer generation, LangGraph, and retrieval experiments in their later milestones. Do not change the reviewed corpus or optimize chunking without an identified need or measured evidence.

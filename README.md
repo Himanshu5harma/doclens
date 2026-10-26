@@ -2,7 +2,7 @@
 
 A version-aware RAG assistant for technical documentation, with source citations and retrieval evaluation.
 
-**Status: corpus ingestion implemented.** The curated corpus has 20 official Python documentation pages across versions 3.12 and 3.13. One command downloads raw HTML with provenance and parses structured sections. Chunking, retrieval, generation, version comparisons, and evaluation remain planned; no quality scores or working RAG demo are claimed yet.
+**Status: ingestion and baseline chunking implemented.** The curated corpus has 20 official Python documentation pages across versions 3.12 and 3.13. Commands download raw HTML with provenance, parse sections, and create inspectable chunks with stable IDs. Embeddings, indexing, retrieval, generation, version comparisons, and evaluation remain planned; no quality scores or working RAG demo are claimed yet.
 
 ## The problem
 
@@ -109,11 +109,26 @@ for section in document["sections"]:
 PY
 ```
 
-The parser uses Beautiful Soup with Python's `html.parser` and targets the current Python/Sphinx layout. It fails on pages without the expected article region, rather than treating the entire page as evidence. Images are not interpreted, complex table relationships are not modeled, and future documentation layouts may need a new adapter. Repeating `parse` with unchanged inputs and parser produces the same JSON files. Parsed sections are not yet retrieval chunks.
+The parser uses Beautiful Soup with Python's `html.parser` and targets the current Python/Sphinx layout. It fails on pages without the expected article region, rather than treating the entire page as evidence. Images are not interpreted, complex table relationships are not modeled, and future documentation layouts may need a new adapter. Repeating `parse` with unchanged inputs and parser produces the same JSON files. The chunking command below turns parsed sections into passages for later retrieval.
 
 On a failure, completed sources remain available and the command exits with an error. A hash or source-metadata mismatch requires re-fetching or correcting the manifest before parsing.
 
-Run the offline ingestion checks with:
+## Build and inspect baseline chunks
+
+Using the existing local ingestion outputs:
+
+```bash
+uv run python -m doclens chunk
+uv run python -m doclens chunk --source-id python-3.13-pathlib
+```
+
+The baseline packs adjacent blocks within a section and source anchor toward 2,000 characters, including repeated heading/anchor context. It uses no overlap, splits oversized prose, and preserves whole code, signatures, and table rows with an oversized flag when needed. Character sizes do not establish a future model's token limits.
+
+Output for the example source is `data/chunks/section-anchor-v1-2000/python/3.13/pathlib.html.json`. It includes source/version/hash metadata, typed content pieces with source offsets, stable IDs, and inspectable text. `--max-chars 2500` writes a separate policy directory; `--manifest PATH` selects another corpus. Chunking works offline and refuses stale or mismatched ingestion provenance.
+
+The verified default run produced 1,474 chunks from all 20 documents, preserving every source block and all 650 code examples. See [the chunking guide](docs/chunking.md) for document/section/chunk definitions, policy tradeoffs, identity/update behavior, code entry points, and a command that prints a real API chunk.
+
+Run the offline checks with:
 
 ```bash
 uv run python -m unittest discover -s tests -v
@@ -146,8 +161,8 @@ doclens/
   corpus/               Curated source manifest
   docs/                 Architecture, milestones, and learning notes
   evals/                Evaluation design; labeled examples come later
-  src/doclens/          Manifest reader, downloader, parser, and CLI
-  tests/                Offline downloader, parser, and ingestion checks
+  src/doclens/          Ingestion, typed records, baseline chunker, and CLI
+  tests/                Offline ingestion and chunking checks
   pyproject.toml        Project metadata and packaging
 ```
 

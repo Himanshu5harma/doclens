@@ -26,8 +26,9 @@ Explain: What information would disappear if we converted every HTML page to pla
 
 ## Milestone 2: Retrieval baseline
 
-- [ ] Define typed document, chunk, and search-result records.
-- [ ] Implement chunking with stable identifiers and preserved source anchors.
+- [x] Define typed document, section, block, and chunk records.
+- [ ] Define typed search-result records alongside retrieval.
+- [x] Implement chunking with stable identifiers and preserved source anchors (section-anchor-v1 baseline; see [chunking guide](chunking.md)).
 - [ ] Choose a semantic embedding model and record its identifier and configuration.
 - [ ] Build a persistent index with repeatable ingestion.
 - [ ] Implement an inspectable search command with explicit version filtering.

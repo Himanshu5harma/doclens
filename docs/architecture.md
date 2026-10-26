@@ -1,6 +1,6 @@
 # Planned architecture
 
-This document describes the target design. Manifest-driven ingestion is implemented for 20 curated Python documentation pages. `doclens ingest` runs the existing downloader and Python/Sphinx parser in sequence for each source; separate commands expose each stage. Chunking, indexing, retrieval, and answers remain planned. The downloader saves raw bytes with source metadata, fetch time, and a content hash. The parser verifies this provenance and extracts sections with heading paths, typed content blocks, and version-specific source anchors. See the README for commands and file layouts and [the corpus review](corpus.md) for the validated scope.
+This document describes the target design. Manifest-driven ingestion and baseline chunking are implemented for 20 curated Python documentation pages. `doclens ingest` runs the downloader and Python/Sphinx parser; `doclens chunk` loads verified local documents into typed records and writes inspectable chunks. Embedding, indexing, retrieval, and answers remain planned. See the README for commands, [the corpus review](corpus.md) for the input scope, and [the chunking guide](chunking.md) for policy and update behavior.
 
 ## Indexing
 
@@ -14,6 +14,8 @@ flowchart LR
 ```
 
 Preserve product, release, document type, canonical URL, section anchor, title, fetch time, and content hash. Stable source and chunk identifiers make repeat ingestion and document updates inspectable. Preserve code and heading structure during parsing. Retain raw downloads locally for debugging.
+
+The current chunker uses a 2,000-character target including heading/anchor context, without crossing section/anchor groups or adding overlap. It splits oversized prose and preserves oversized structured blocks intact with a flag. IDs fingerprint source identity, policy, context, and passage content, while provenance separately records the raw snapshot and parsed document hashes. Re-running replaces each source's current chunk bundle. A later index must update current payloads and remove old IDs absent from the replacement set; source removals and index synchronization are not implemented.
 
 ## Retrieval and answers
 
