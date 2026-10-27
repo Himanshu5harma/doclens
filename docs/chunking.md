@@ -25,7 +25,7 @@ If heading/anchor context alone consumes the target, the command fails with an i
 
 These choices keep API evidence and code inspectable, at the cost of short chunks and occasional oversized ones. Related prose may span a chunk boundary; an example may be separated from its preceding explanation. The repeated context helps identify the subject but is not a substitute for evaluating retrieval. Table rows can be separated from their headers; complex table semantics were already outside the parser's scope.
 
-There is no sentence model, tokenizer, overlap tuning, or code summarization in this baseline. Oversized blocks must be addressed explicitly when a future embedding model and its input limits are chosen; they must not be silently truncated.
+There is no sentence model, tokenizer, overlap tuning, or code summarization in this chunking baseline. The separate retrieval component now performs token preflight: all current chunks, including the oversized examples, fit its pinned encoder's 8,192-token limit (largest input: 1,932 tokens). A different model may need another explicit policy; text must not be silently truncated.
 
 ## Records and code layout
 
@@ -68,7 +68,7 @@ This means:
 - An unchanged passage can retain its ID after an unrelated earlier insertion. Its block offsets and provenance still refresh.
 - Inserting/removing identical repeated passages can change their occurrence assignment. An ID identifies the scoped content occurrence, not a permanent physical address in a page.
 
-After an update, re-run ingestion and chunking. The command atomically replaces the source's entire bundle for that policy, so that file contains only the current chunk set. A future index must upsert current chunks (including updated metadata) and delete old source IDs absent from the new set. Such an index does not exist yet. Files for sources removed from the manifest are not automatically pruned; consumers must follow the current manifest, not indiscriminately glob every cached file or policy directory.
+After an update, re-run ingestion and chunking. The command atomically replaces the source's entire bundle for that policy, so that file contains only the current chunk set. The separate `index` command now refreshes chunks and builds a complete replacement database from the active manifest, updating payloads and removing stale IDs/sources. Cached chunk files for sources removed from the manifest are not automatically pruned; consumers must follow the current manifest, not indiscriminately glob every cached file or policy directory.
 
 Algorithm changes should increment the policy name/version. Changing only the target uses a separate output directory and identity namespace, allowing baseline experiments to coexist.
 

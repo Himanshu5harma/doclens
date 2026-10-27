@@ -53,6 +53,9 @@ uv run python -m doclens ingest
 uv run python -m doclens fetch
 uv run python -m doclens parse
 uv run python -m doclens chunk
+uv sync --extra retrieval
+uv run --extra retrieval python -m doclens index
+uv run --extra retrieval python -m doclens search "How do I create a path from a file URI?" --version 3.13
 ```
 
 To check manifest syntax:

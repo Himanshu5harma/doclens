@@ -2,7 +2,7 @@
 
 A version-aware RAG assistant for technical documentation, with source citations and retrieval evaluation.
 
-**Status: ingestion and baseline chunking implemented.** The curated corpus has 20 official Python documentation pages across versions 3.12 and 3.13. Commands download raw HTML with provenance, parse sections, and create inspectable chunks with stable IDs. Embeddings, indexing, retrieval, generation, version comparisons, and evaluation remain planned; no quality scores or working RAG demo are claimed yet.
+**Status: local semantic retrieval implemented.** The curated corpus has 20 official Python documentation pages across versions 3.12 and 3.13. Commands ingest documents, build inspectable chunks, persist local embeddings, and search within an explicit release. Answer generation, version-comparison workflows, and formal evaluation remain planned; retrieval quality has not been measured on a labeled dataset.
 
 ## The problem
 
@@ -35,7 +35,7 @@ python -m pip install -e .
 python -m doclens
 ```
 
-Without a subcommand, the command prints the project status. No API key is needed for downloading or parsing documents.
+Without a subcommand, the command prints the project status. No API key is needed for ingestion, chunking, or local retrieval. Retrieval has an optional dependency group and a one-time model download, described below.
 
 ## Ingest the corpus
 
@@ -128,7 +128,23 @@ Output for the example source is `data/chunks/section-anchor-v1-2000/python/3.13
 
 The verified default run produced 1,474 chunks from all 20 documents, preserving every source block and all 650 code examples. See [the chunking guide](docs/chunking.md) for document/section/chunk definitions, policy tradeoffs, identity/update behavior, code entry points, and a command that prints a real API chunk.
 
-Run the offline checks with:
+## Build the local index and search
+
+After ingestion, install the optional local embedding dependencies and build the index:
+
+```bash
+uv sync --extra retrieval
+uv run --extra retrieval python -m doclens index
+uv run --extra retrieval python -m doclens search "How do I create a path from a file URI?" --version 3.13 --top-k 3
+```
+
+The baseline uses a pinned local `nomic-ai/modernbert-embed-base` model and SQLite. Indexing refreshes verified chunks from the current manifest, checks model token limits without truncation, and replaces `data/indexes/baseline.sqlite3`. The first run downloads about 596 MB of model weights in addition to Python dependencies; subsequent inference runs on CPU with no per-request model service charge.
+
+Search opens the saved index read-only, filters the version before ranking, and displays complete passages with scores, source URLs, and version labels. `--json` returns structured results. The model and configuration are stored with the index so queries use the same encoder contract. The actual corpus fits within its token limit, including both large code examples.
+
+See [the retrieval guide](docs/retrieval.md) for the model/configuration, local resource tradeoffs, code walkthrough, update behavior, smoke results, and limits. The first URI result for 3.13 is `Path.from_uri`; the same 3.12 query returns a related reverse operation. Similarity is a ranking signal and does not by itself establish answer support.
+
+Run the offline behavior checks (they do not download or run a model) with:
 
 ```bash
 uv run python -m unittest discover -s tests -v
@@ -161,8 +177,9 @@ doclens/
   corpus/               Curated source manifest
   docs/                 Architecture, milestones, and learning notes
   evals/                Evaluation design; labeled examples come later
-  src/doclens/          Ingestion, typed records, baseline chunker, and CLI
-  tests/                Offline ingestion and chunking checks
+  configs/              Pinned embedding configuration
+  src/doclens/          Ingestion, chunking, local encoding/search, and CLI
+  tests/                Offline ingestion, chunking, and retrieval checks
   pyproject.toml        Project metadata and packaging
 ```
 

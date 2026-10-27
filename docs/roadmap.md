@@ -27,14 +27,16 @@ Explain: What information would disappear if we converted every HTML page to pla
 ## Milestone 2: Retrieval baseline
 
 - [x] Define typed document, section, block, and chunk records.
-- [ ] Define typed search-result records alongside retrieval.
+- [x] Define typed search-result records alongside retrieval.
 - [x] Implement chunking with stable identifiers and preserved source anchors (section-anchor-v1 baseline; see [chunking guide](chunking.md)).
-- [ ] Choose a semantic embedding model and record its identifier and configuration.
-- [ ] Build a persistent index with repeatable ingestion.
-- [ ] Implement an inspectable search command with explicit version filtering.
-- [ ] Show the retrieved passages, ranks, source links, and version labels.
+- [x] Choose a semantic embedding model and record its identifier and configuration (pinned ModernBERT baseline; see [retrieval guide](retrieval.md)).
+- [x] Build a persistent index with repeatable ingestion (SQLite replacement; two actual builds verified).
+- [x] Implement an inspectable search command with explicit version filtering.
+- [x] Show the retrieved passages, ranks, source links, and version labels.
 
 Done when: a question returns relevant passages from the requested release and re-ingestion does not duplicate chunks.
+
+Completed for the selected scope on 2026-10-27: local embeddings for all 1,474 chunks, repeatable index replacement, and version-filtered search. Smoke examples establish working behavior, not evaluation scores.
 
 Explain: How do chunk boundaries, embedding choice, and top-k change what the answer generator sees?
 

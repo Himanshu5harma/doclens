@@ -1,6 +1,6 @@
 # Planned architecture
 
-This document describes the target design. Manifest-driven ingestion and baseline chunking are implemented for 20 curated Python documentation pages. `doclens ingest` runs the downloader and Python/Sphinx parser; `doclens chunk` loads verified local documents into typed records and writes inspectable chunks. Embedding, indexing, retrieval, and answers remain planned. See the README for commands, [the corpus review](corpus.md) for the input scope, and [the chunking guide](chunking.md) for policy and update behavior.
+This document describes the target design. Ingestion, chunking, local embedding, persistent indexing, and version-filtered retrieval are implemented for 20 curated Python documentation pages. `doclens ingest` downloads/parses sources, `doclens chunk` exposes passages, `doclens index` builds a complete SQLite snapshot, and `doclens search` returns evidence within an explicit version. Answer generation and LangGraph remain planned. See the README, [corpus review](corpus.md), [chunking guide](chunking.md), and [retrieval guide](retrieval.md) for the validated scope.
 
 ## Indexing
 
@@ -15,7 +15,9 @@ flowchart LR
 
 Preserve product, release, document type, canonical URL, section anchor, title, fetch time, and content hash. Stable source and chunk identifiers make repeat ingestion and document updates inspectable. Preserve code and heading structure during parsing. Retain raw downloads locally for debugging.
 
-The current chunker uses a 2,000-character target including heading/anchor context, without crossing section/anchor groups or adding overlap. It splits oversized prose and preserves oversized structured blocks intact with a flag. IDs fingerprint source identity, policy, context, and passage content, while provenance separately records the raw snapshot and parsed document hashes. Re-running replaces each source's current chunk bundle. A later index must update current payloads and remove old IDs absent from the replacement set; source removals and index synchronization are not implemented.
+The current chunker uses a 2,000-character target including heading/anchor context, without crossing section/anchor groups or adding overlap. It splits oversized prose and preserves oversized structured blocks intact with a flag. IDs fingerprint source identity, policy, context, and passage content, while provenance separately records the raw snapshot and parsed document hashes. Re-running replaces each source's current chunk bundle. The index rebuild follows the current manifest and replaces its complete snapshot, refreshing payloads and removing old IDs/sources. It does not reuse previous embeddings incrementally.
+
+The dense baseline uses a pinned local ModernBERT encoder, explicit query/document prefixes, token preflight without truncation, and normalized 768-dimensional vectors. SQLite applies product/version constraints before selecting rows to score by exact cosine similarity. Queries open the saved index read-only and use cached model files and the index's saved configuration. Search does not mutate ingestion outputs or the index.
 
 ## Retrieval and answers
 
@@ -54,4 +56,4 @@ Programmatic checks can verify that a citation refers to a retrieved chunk, has 
 
 ## Components to choose during implementation
 
-The embedding model, storage adapter, LLM provider, reranker, and user interface are intentionally undecided. Record the final choices with cost, local resource needs, and reproducibility in mind. Avoid introducing infrastructure that the first milestone does not need.
+The baseline embedding/storage choices are recorded in `configs/retrieval.json`, `uv.lock`, and index metadata. The LLM provider, reranker, and user interface remain undecided. Record future choices with cost, local resource needs, and reproducibility in mind. Add infrastructure when a measured requirement justifies it.

@@ -93,6 +93,31 @@ class Chunk:
     oversized: bool
 
 
+@dataclass(frozen=True)
+class SearchResult:
+    rank: int
+    score: float
+    chunk_id: str
+    source: Source
+    document_title: str
+    heading_path: tuple[str, ...]
+    url: str
+    text: str
+    content_hash: str
+    oversized: bool
+
+
+@dataclass(frozen=True)
+class SearchResponse:
+    query: str
+    product: str
+    version: str
+    candidate_count: int
+    model_id: str
+    model_revision: str
+    results: tuple[SearchResult, ...]
+
+
 def _object(value: object, label: str) -> dict:
     if not isinstance(value, dict):
         raise ValueError(f"{label} must be an object.")
