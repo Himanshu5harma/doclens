@@ -1,6 +1,6 @@
 # Current learning checkpoint
 
-Last updated: 2026-10-27 (Asia/Kolkata).
+Last updated: 2026-10-29 (Asia/Kolkata).
 
 ## Goal and working agreement
 
@@ -10,7 +10,7 @@ Public descriptions focus on DocLens's purpose and honest capabilities, rather t
 
 ## Verified implementation
 
-Milestone 1 is complete and was reviewed with no blocking findings for the selected corpus. Milestone 2 now also has a complete local dense-retrieval baseline: typed chunks/results, a pinned embedding model, persistent SQLite indexing, and explicit version-filtered search. Answer generation, formal evaluation results, and LangGraph remain unimplemented.
+Milestones 1 and 2 are implemented for the selected corpus. Milestone 3 has a source-checked development/held-out dataset, retrieval evaluation runner, provisional development scores, and failure/annotation review; independent human label review remains open. **Milestone 4's direct baseline RAG is now verified working end to end**, using the user's successful four-case live report and this chat's evidence/semantic review. Two supported questions were answered and two unsupported questions appropriately received insufficient-evidence responses, all structurally valid and reporting zero model cost. Metadata-preservation qualification and citation-placement limitations remain. Broader quality validation is open; LangGraph is proposed but not implemented.
 
 The components are:
 
@@ -23,7 +23,11 @@ The components are:
 - `src/doclens/chunk.py`: `chunk_document()` is the pure baseline algorithm; `chunk_source()` checks raw/sidecar/parsed provenance, loads typed records, and atomically replaces one source's chunk bundle. Pieces carry source block indices and exact half-open character offsets, permitting loss/duplication checks.
 - `src/doclens/embeddings.py`: immutable embedding configuration, an injectable encoder protocol, vector validation/normalization, and a lazy-loaded local encoder. Query/document prefixes and special tokens count toward preflight limits. Inputs are never silently truncated.
 - `src/doclens/retrieval.py`: current-manifest chunk collection, complete atomic SQLite replacement, and read-only product/version-filtered exact cosine search. Full chunk payloads and float32 vectors are persisted; typed `SearchResult`/`SearchResponse` records expose evidence.
-- `src/doclens/__main__.py`: existing ingestion/chunk commands plus `index` and `search`. `index` supports manifest/config/index paths and chunk target; `search` requires an explicit `--version`, supports product/top-k/index/JSON output, and uses the configuration saved in the index.
+- `src/doclens/evaluation.py`: validates typed questions, corpus hashes, reference anchors/quotes, and index scope; computes deduplicated source-region metrics, evidence-group coverage, and separate comparison/single-release results; saves full outcomes and reproducibility metadata atomically. The catalog reconstructs overlapping source pieces for quote verification. The runner aborts on changed index hashes and protects input/label files from report writes.
+- `src/doclens/answers.py`: typed prepared evidence/answer records, version/hash/URL checks, whole-passage prompt budgeting, structured status/citation validation, and trusted source rendering. `prepare_question` reuses existing retrieval; `answer_question` calls an injectable generator once.
+- `src/doclens/generation.py`: standard-library OpenRouter client, explicit :free ID/configuration, current zero-price/capability preflight, zero-price routing caps, disabled fallbacks/transforms, explicit socket/output/context limits, redacted readable failures, model/usage/latency metadata, and no automatic retry. No new dependency was added.
+- `src/doclens/answer_evaluation.py`: fixed four-question dev sample, prompt-only inspection or at most four generations with stop-on-error behavior, read-only index/corpus checks, separate reports, and initially pending semantic-review fields. The 2026-10-29 live report is preserved unchanged; the subsequent assistant review is recorded separately in `evals/generation-dev-review.md`. Held-out labels are never opened.
+- `src/doclens/__main__.py`: ingestion/chunking, `index`, `search`, `evaluate`, `ask`, and `evaluate-answers`. Retrieval evaluation defaults to `--split dev`; the answer sample is development-only. `ask --inspect-prompt` needs no provider key/API call; `--json` exposes structured answers/evidence/metadata.
 - `pyproject.toml` / `uv.lock`: Beautiful Soup remains the base dependency. The optional `retrieval` extra adds Sentence Transformers; the verified runtime is sentence-transformers 5.7.0, transformers 5.21.0, and torch 2.14.1. Heavy dependencies/model loading are not required by ingestion/chunking or offline tests.
 
 ## Corpus and validation
@@ -50,13 +54,13 @@ Local outputs are ignored by Git:
 
 The manifest SHA-256 for the reviewed run is `25f48fd84536b623d9efc056ac8d5f775d71217aae48c4c37bb30ec1d9b3daa8`.
 
-The offline suite has 57 passing tests: 22 ingestion, 19 chunking, and 16 retrieval/encoder contract checks. The new checks cover filter-before-ranking (including an invalid vector in the excluded version), exact scores/ties, encoder compatibility, stale-row/source removal, metadata refresh, failed-build preservation, token limits including prefixes, invalid vectors, manifest snapshot consistency, and JSON CLI output. Test vectors establish behavior, not semantic quality.
+The last full offline verification passed **110 tests**: the previous 74 ingestion/chunking/retrieval/evaluation tests plus 36 answer/client/sample tests. Checks cover exact prompt byte boundaries and whole code preservation, omitted chunks, mixed versions/URLs/hashes, metadata/repeatability, partial/insufficient outcomes, uncited/malformed/truncated responses, citation IDs/versions, provider/auth/rate/transport errors, price/capability changes, redaction, read-only behavior, and bounded dev-only reports. This documentation-only review did not rerun the suite. All recorded implementation/packaging hashes in the live report still match the current files. Test doubles establish behavior, not semantic quality.
 
 The user's earlier review recommendations are resolved. The response fixture now returns a version-appropriate final URL. Failure tests also exercise interruption between HTML and metadata writes (the parser rejects the pair and preserves prior parsed output), and a two-source fetch whose second read fails (first success remains valid and previous second-source files are preserved).
 
 ## Verified chunking baseline
 
-The selected `section-anchor-v1` policy uses a 2,000-character target, including repeated heading/anchor context and separators, with no overlap. It packs adjacent blocks without crossing a section or effective anchor. Oversized prose splits at whitespace, falling back to characters for long words; code, signatures, and table rows stay whole and are flagged oversized if necessary. A target too small for heading context fails clearly. Characters are not model tokens, and no retrieval quality has been measured.
+The selected `section-anchor-v1` policy uses a 2,000-character target, including repeated heading/anchor context and separators, with no overlap. It packs adjacent blocks without crossing a section or effective anchor. Oversized prose splits at whitespace, falling back to characters for long words; code, signatures, and table rows stay whole and are flagged oversized if necessary. A target too small for heading context fails clearly. Characters are not model tokens; chunk-policy alternatives have not been evaluated.
 
 | Release | Documents | Chunks | Oversized |
 | --- | ---: | ---: | ---: |
@@ -82,6 +86,58 @@ Real smoke queries returned the requested version only and did not change index 
 
 Indexing refreshes verified chunk bundles, checks all lengths, encodes locally, then builds a temporary database and replaces the old file only after success. It currently re-encodes all passages on each build. Querying opens the existing DB read-only, filters product/version in SQL before selecting vectors to score, and uses cached model files with the saved index configuration. It serves that snapshot until an explicit rebuild; it does not compare ingestion files or mutate data/index state. Full policy/model/runtime/manifest/chunk-set metadata is saved in SQLite.
 
+## Provisional development evaluation
+
+The retriever/model/index/chunking policy were left unchanged. `evals/dev.json` has 24 questions: six exact, eight paraphrase, five multi-source, two comparison, and three missing-evidence cases. `evals/heldout.json` reserves eight different questions, source-validated without running retrieval. The four earlier smoke questions belong to development. Reference answers and required facts were authored by the assistant and checked against saved source passages; they are not human-reviewed or passed into retrieval. All labels/results remain provisional pending independent review.
+
+The source/API-anchor labels include verification quotes and accepted alternatives grouped by required source region. Both datasets pin all 20 raw source hashes and the manifest hash. Dev dataset SHA-256: `c83255a64ac6a97d7efcd9f45d4fd191e6eca11d8325717489c85fe1cfe21e8f`. Held-out SHA-256: `23d02a6a73f3a137d6fea64c4de09c4d414566b87a53840b515f65afdff8df5a`. Do not silently revise frozen labels after seeing scores; version a reviewed correction and preserve the prior report.
+
+Two actual dev evaluations at k=5 per requested version produced identical metrics on the same dataset/index hashes. No held-out retrieval was run. The latest full report is ignored `outputs/evals/dev-k5.json`; the original report is preserved at `outputs/evals/dev-k5-initial.json`. The committed [development baseline review](../evals/baseline-dev.md) records the measurements and limitations.
+
+| Group | Answerable cases | Annotated-section recall@5 | MRR@5 | Evidence-group recall@5 |
+| --- | ---: | ---: | ---: | ---: |
+| Single release | 19 | 0.9737 | 0.8947 | 1.0000 |
+| Comparison | 2 | 0.7500 | 0.4375 | 0.7500 |
+
+Wrong-version chunks: 0/130 returned chunks, including 15 candidates for the three unsupported cases. Those cases have null recall/MRR/coverage: this retrieval-only report does not measure answer abstention. Comparison MRR averages reciprocal ranks independently per requested version within each question, then across comparison questions. One of two comparisons found any labeled evidence for both versions.
+
+Reviewed cases: `dev-001` found the URI API but not its alternative release note (section recall 0.5, group recall 1.0). `dev-022` missed the 3.12 `glob.escape` anchor; the returned glob/re introductions/examples do not provide that needed instruction. On its 3.13 side, a useful What’s New glob passage ranked first but is absent from the frozen accepted labels, while the labeled API ranked second. This is a specific annotation-gap candidate; do not silently inflate scores by editing labels. Mixing two intents in the full comparison query is a plausible retrieval hypothesis, not a proven root cause. No rewrite, reranker, or tuning was tried.
+
+Reports include dataset/index/source hashes, full model/policy/runtime metadata, code commit/dirty status and implementation hashes, labels/reference answers, complete retrieved passages, matched/missed regions, per-version candidate counts, and timing. The final run's 26 retrieval calls took about 3.54 seconds after model loading; timings are local observations, not controlled benchmarks. Model-service calls were zero; hardware/electricity costs were not estimated. Index bytes remained unchanged.
+
+## Direct RAG implementation and first check, 2026-10-28
+
+This section records the earlier offline checkpoint. Its missing-key/live-pending status was superseded by the verified live run below; the original reports remain unchanged.
+
+The user explicitly requested one complete answer-pipeline learning unit before LangGraph. The design was explained first: reuse unchanged version-filtered retrieval; assign trusted evidence IDs; preserve whole passages/code and explicit context limits; generate a strict JSON status/answer/citation/gap record; validate structure; resolve display links from local metadata. Similarity is not an answerability threshold and model sufficiency judgments remain fallible.
+
+Selected `nvidia/nemotron-3.5-super-vl:free` after checking official OpenRouter API/routing/error/structured-output documentation and the public model catalog on 2026-10-28. The catalog listed zero input/output prices, JSON-schema support, a 1,000,000-token context, and a 131,072-token provider output cap. `configs/generation.json` uses temperature 0, max output 1,600 tokens, max serialized prompt 24,000 bytes, and 45-second socket timeouts. Reasoning is disabled. Temperature 0 does not guarantee deterministic generation. Every live call rechecks prices, sends zero prompt/completion/request price caps, disables fallbacks and context transforms, and makes no automatic retry. No paid route is substituted. Returned base/canonical IDs are accepted only for the requested model and recorded separately.
+
+Generation sends the question and selected public passage text/heading/anchor/hash metadata through OpenRouter to its provider. The selected free endpoint logs session data for security/product improvement and prohibits confidential/personal data. Setup, data disclosure, free-tier constraints, code paths, failure behavior, commands, and limits are in [the answer guide](answers.md). No credential was read into a report or written to source/Git. The key is read from the environment at request time; `.env` is not automatically loaded.
+
+Real development prompt inspection used only dev-001 (URI 3.13), dev-014 (copyfile/copy2 3.12), dev-004 (URI evidence gap 3.12), and dev-023 (Kubernetes outside corpus). All four fit the budget with five complete passages each and zero omissions: 8,138 / 9,961 / 7,347 / 7,725 serialized message bytes respectively. Every supplied passage matched the requested release and content hash. E1 in dev-001 contains the actual `Path.from_uri('file:///etc/hosts')` example. Dev-014 supplies both `copyfile`'s no-metadata behavior and `copy2`'s qualified preservation behavior. The other two prompts do not supply the requested instructions; appropriate abstention remains to be verified in live output. This source/prompt review was authored by the implementing assistant, not an independent human.
+
+Actual local reports: `outputs/answers/openrouter-model-verification.json`, `dev-prompts.json`, `uri-prompt.json`, and `dev-live-attempt.json`. Prompt-only commands succeeded. The application HTTP client also read the real public catalog successfully with normal TLS verification and no key/question/evidence sent. The live-sample command exited 1 at the missing-key configuration check before any provider HTTP request; first case is an error, remaining cases not attempted, all generated-answer fields null. No live correctness/support/citation/abstention scores are invented. The report records four as the request ceiling, not an actual completion count. See [the development generation check](../evals/generation-dev-review.md).
+
+Verified with the full 110-test offline suite and `git diff --check`. A hash comparison of 86 existing corpus/raw/parsed/chunk/index/label/retrieval-report files found no changes. Both frozen dataset hashes still match the prior checkpoint. Held-out files were hash-compared for preservation only; their questions were not retrieved or generated. The existing index was neither rebuilt nor tuned. Existing user modifications and prior untracked evaluation work were preserved; no commit/push was made.
+
+## Verified live baseline and semantic review, 2026-10-29
+
+The user configured OPENROUTER_API_KEY and successfully ran `ask` and `evaluate-answers`. This chat inspected `outputs/answers/dev-20261029T034534302245Z.json` itself and reviewed the answers against their supplied passages. Report SHA-256: `603e6f1498bb8f7d054c27eb906c8c668910800cf4c93d8454ebd9b503d9594c`. All four outcomes are generated, all finish reasons are `stop`, all structural-validation fields are true, and requested/returned model IDs are `nvidia/nemotron-3.5-super-vl:free`. Each records zero cost, no automatic retries, and disabled fallbacks. Total reported usage is 8,755 prompt + 460 completion = 9,215 tokens; summed generation HTTP latency is about 5.938 seconds, excluding preflight/local retrieval/loading. These are four-run observations, not a performance/billing guarantee.
+
+Read-only checks confirmed the live report's index SHA `1c50c846cbcfc9e27e0dbe038a66915f7821a7aec58ba9da2510e613ae3ebb2d`, dev dataset SHA, and all 16 implementation/packaging hashes still match current files. Each of the 20 supplied passages matches the indexed chunk text, content/source metadata, heading, anchor, URL, and requested product/version. Prompt sizes/hashes and cited-evidence records match the supplied messages/map; no chunks were omitted. No new retrieval, provider request, embedding run, or index rebuild was needed.
+
+The assistant's qualitative findings are saved separately in [the live development review](../evals/generation-dev-review.md):
+
+- dev-001 / Python 3.13: conversion, examples, invalid-input conditions, and addition note are supported by E1. Citations appear only at the end; E2 is general URI context rather than support for the final error/version claims. Claim-local placement/coverage is not established by valid IDs.
+- dev-014 / Python 3.12: the core `copyfile`/`copy2` distinction and use of `copystat` are correct. The opening wording is too categorical; later “attempts to preserve” helps, but explicit platform/metadata limits from the supplied E1/E2 are omitted. E1/E4 are relevant citations, grouped at paragraph end. This is a known qualification/completeness limitation, not a fully clean semantic pass.
+- dev-004 / Python 3.12: appropriately identifies missing conversion evidence and avoids claiming release-wide feature absence.
+- dev-023 / Python 3.13: appropriately declines to invent Kubernetes resource limits from unrelated Python passages.
+
+This verifies a **working direct baseline RAG**, with two supported-question answers and two appropriate evidence-limited abstentions in this fixed sample. It does not establish general accuracy, calibrated sufficiency, complete citation coverage, or independent human review. No live partial outcome or version-comparison answer was exercised. Independent retrieval-label review and broader answer-quality validation remain open.
+
+The original report and its pending/null semantic-review fields are preserved as saved; the dated Markdown review records subsequent judgments. Earlier prompt-only and missing-key reports are retained. A final byte-hash comparison found all 111 protected corpus/config/metadata/index/label/report artifacts unchanged; implementation hashes still match, local Markdown targets resolve, and `git diff --check` passes. This session changes documentation only and does not rerun the 110-test suite or access provider credentials. LangGraph is explained in [a proposed first unit](langgraph-first-step.md); no graph code or dependency has been added.
+
 ## Decisions and limits to retain
 
 - Version labels are strings identifying release lines, not immutable initial-release snapshots. Fetch time and SHA-256 identify downloaded bytes. A fresh ingestion can change hashes when upstream pages change.
@@ -90,7 +146,10 @@ Indexing refreshes verified chunk bundles, checks all lengths, encodes locally, 
 - `source_terms_url` records the external documents' license terms, independently of DocLens's own code license. The user agreed to keep the link. Recording it has no fee; future API/hosting costs are separate.
 - Answers should cite the retrieved evidence supporting their claims, not list the whole corpus. Local paths and license metadata generally stay internal.
 - The parser is scoped to observed Python/Sphinx layouts. Images are not interpreted and complex table relationships are not modeled. Source presence/absence must not be inferred solely from retrieval results.
-- Raw HTML is retained for debugging; indexed payloads retain source hashes and explicit version citations. No formal retrieval or answer-quality scores have been measured.
+- Raw HTML is retained for debugging; indexed payloads retain source hashes and explicit version citations. Development retrieval metrics use provisional labels. Four live development outputs now have a qualitative assistant review; held-out outputs and numeric claim-support/citation-quality scores have not been measured.
+- Answer validation checks IDs, versions, formatting/status consistency, and finish reasons. It requires citations for substantive output but does not prove individual claim support, complete citation coverage, correct generated code, or calibrated sufficiency. Insufficiency is distinct from provider/invalid-response errors. The renderer supplies links from trusted metadata; model-authored HTTP/Markdown links are rejected.
+- Generation uses a conservative UTF-8 byte/schema/framing admission estimate, not the model's exact tokenizer. Whole passages are omitted explicitly when the prompt budget fills; a too-large first passage fails. No passage/code is silently cut. Socket timeouts are not strict overall wall-clock deadlines. Free availability and serving weights can change.
+- Evaluation coverage is at source/API-anchor granularity. A hit can contain another paragraph from the region; source-quote validation is not entailment checking. Valid unannotated alternatives can also depress scores. Do not turn these metrics into claims of answer correctness or broad production accuracy.
 - The character target is a soft limit for structured blocks. Current token preflight fits every chunk, but a different embedding model may need another explicit policy. No-overlap and anchor boundaries can produce small or context-limited chunks; these are baseline tradeoffs to evaluate, not proven optimal choices.
 - Keep `docs/learning-notes.md` for the user's own explanations; do not invent understanding or overwrite those notes.
 
@@ -106,6 +165,11 @@ uv run python -m doclens chunk --source-id python-3.13-pathlib
 uv sync --extra retrieval
 uv run --extra retrieval python -m doclens index
 uv run --extra retrieval python -m doclens search "How do I create a path from a file URI?" --version 3.13 --top-k 3
+uv run --extra retrieval python -m doclens evaluate --split dev --top-k 5
+uv run --extra retrieval python -m doclens ask "How do I create a path from a file URI?" --version 3.13 --inspect-prompt
+uv run --extra retrieval python -m doclens ask "How do I create a path from a file URI?" --version 3.13
+uv run --extra retrieval python -m doclens evaluate-answers --inspect-prompt
+uv run --extra retrieval python -m doclens evaluate-answers
 uv run python -m unittest discover -s tests -v
 ```
 
@@ -113,6 +177,6 @@ In this tool environment, use `UV_CACHE_DIR=/private/tmp/doclens-uv-cache` for u
 
 ## Next feature
 
-Milestone 2 is implemented and behavior-checked. Explain vectors, prefixing, normalization/cosine, index snapshots, and filtering before ranking using the real search output if the user asks; their understanding is not assumed. Preserve the current model, chunking policy, and index as the untuned baseline.
+The user asked to explain the first useful LangGraph unit after updating this baseline checkpoint. [The proposal](langgraph-first-step.md) introduces typed workflow state, prepare/generate/validate nodes reusing existing functions, an explicit prompt-inspection route, terminal error/empty-evidence behavior, and local node-update traces. Preserve the direct pipeline as a reference; verify graph parity offline with injected completions and at most one generation per answer. No LangGraph implementation was requested in this turn; do not treat the proposal as implemented or start it automatically.
 
-Next is Milestone 3: read `evals/README.md`, build manually checked development questions with relevant source sections, reserve a held-out split before tuning, and compute defined retrieval metrics with saved configuration/failures. The four smoke queries have already been seen and can be development examples, not unseen held-out cases. Include paraphrases, exact terms, multiple-source needs, release distinctions, and missing evidence. Do not tune retrieval or add an answer generator, hybrid search, reranker, or LangGraph before measuring the baseline. LLM provider and UI remain undecided.
+Known answer refinements remain explicit preservation limits and claim-local citation placement; these need their own focused change/review rather than a graph-quality claim. Independent retrieval-label review also remains open, including the dev-022 candidate alternative. Version corrected labels and preserve frozen scores/reports. Keep held-out retrieval/generation reserved, and avoid unnecessary baseline rebuilds, tuning, or provider calls. Query rewriting, comparisons, hybrid retrieval, reranking, persistence, and UI remain later work.

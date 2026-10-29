@@ -42,25 +42,32 @@ Explain: How do chunk boundaries, embedding choice, and top-k change what the an
 
 ## Milestone 3: Measure the baseline
 
-- [ ] Write a small, manually checked set of questions with relevant source passages.
-- [ ] Include exact terminology, paraphrases, multiple-source questions, version distinctions, and missing evidence.
-- [ ] Separate development questions from held-out questions before tuning.
-- [ ] Report retrieval metrics with definitions and saved run configuration.
-- [ ] Review and record failures before changing the retriever.
+- [x] Write a small source-checked question set with relevant passages (24 dev, eight held-out; provisional assistant-authored labels).
+- [x] Include exact terminology, paraphrases, multiple-source questions, version distinctions, and missing evidence.
+- [x] Separate development questions from held-out questions before tuning (held-out retrieval has not been run).
+- [x] Report retrieval metrics with definitions and saved run configuration (see [development baseline](../evals/baseline-dev.md)).
+- [x] Review and record failures before changing the retriever (including a labeled miss and a candidate annotation gap).
+- [ ] Obtain independent human label review and version any annotation corrections before relying on quality claims.
 
 Done when: a reproducible report shows what the baseline retrieves correctly and where it fails. See [evaluation design](../evals/README.md).
+
+The runner and provisional development report are implemented on 2026-10-27. Independent annotation review remains open; held-out and answer-quality scores are not claimed.
 
 Explain: Could an answer generator recover from a retrieval result that contains none of the required evidence?
 
 ## Milestone 4: Generate supported answers
 
-- [ ] Select an LLM provider and keep credentials in local environment variables.
-- [ ] Build an inspectable prompt from retrieved evidence.
-- [ ] Return source-linked citations and an explicit insufficient-evidence response when appropriate.
-- [ ] Check citation identifiers and requested versions.
-- [ ] Evaluate answer correctness, claim support, citation quality, and abstention separately.
+- [x] Select an LLM provider and keep credentials in local environment variables (explicit OpenRouter :free model; key setup documented).
+- [x] Build an inspectable prompt from retrieved evidence (real four-case dev prompts checked).
+- [x] Implement source-linked citations, partial answers, and explicit insufficient-evidence output (offline contracts plus live answered/insufficient cases; live partial remains unexercised).
+- [x] Check citation identifiers and requested versions (including malformed/truncated response rejection).
+- [x] Verify live end-to-end generation using the configured free model (four saved dev outputs, 2026-10-29).
+- [x] Review answer correctness, claim support, citation quality, and abstention separately on the bounded dev sample (assistant review with explicit caveats).
+- [ ] Improve metadata-preservation qualifications and claim-local citation placement; expand quality validation and obtain independent review.
 
 Done when: an answer can be inspected against its evidence, and unsupported questions are included in evaluation.
+
+The working direct baseline RAG is complete for this implementation scope as of 2026-10-29. The [live development review](../evals/generation-dev-review.md) records four structurally valid generations, two supported-question answers, two appropriate abstentions, and zero reported model cost. It also records incomplete `copy2` preservation caveats and weak citation placement. Broader quality validation, held-out assessment, and independent human review remain open. LangGraph has not been implemented.
 
 Explain: Why can an answer have correctly formatted citations and still be unsupported?
 
@@ -75,6 +82,8 @@ Explain: Why can an answer have correctly formatted citations and still be unsup
 Done when: a report isolates the effect of each change and includes concrete successes and failures.
 
 ## Milestone 6: Add LangGraph and version comparison
+
+The user requested an explanation of the first LangGraph lesson after verifying baseline RAG. The [proposed first unit](langgraph-first-step.md) reuses the single-release pipeline with typed state, explicit nodes, an inspection branch, and local execution traces. This is a proposal only; dependency installation and graph implementation have not begun. Retrieval experiments above remain unimplemented.
 
 - [ ] Define workflow state and nodes using the existing components.
 - [ ] Route questions into a single-release or comparison path.

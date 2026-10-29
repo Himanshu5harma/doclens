@@ -5,12 +5,17 @@ import hashlib
 import json
 import sqlite3
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 from doclens import __version__
+from doclens.answer_evaluation import run_answer_sample
+from doclens.answers import answer_question, display_answer, prepare_question
 from doclens.chunk import ChunkPolicy, chunk_source
 from doclens.embeddings import LocalEncoder, load_embedding_config
+from doclens.evaluation import run_evaluation
 from doclens.fetch import fetch_source
+from doclens.generation import GenerationError, load_generation_config
 from doclens.manifest import load_sources
 from doclens.parse import parse_source
 from doclens.retrieval import build_index, collect_chunks, search_index
@@ -45,7 +50,83 @@ def main() -> None:
     search_parser.add_argument("--top-k", type=int, default=5)
     search_parser.add_argument("--index", type=Path, default=Path("data/indexes/baseline.sqlite3"))
     search_parser.add_argument("--json", action="store_true", dest="json_output")
+    ask_parser = commands.add_parser("ask", help="Generate and validate an answer from version-scoped evidence.")
+    ask_parser.add_argument("question")
+    ask_parser.add_argument("--version", required=True)
+    ask_parser.add_argument("--product", default="python")
+    ask_parser.add_argument("--top-k", type=int, default=5)
+    ask_parser.add_argument("--index", type=Path, default=Path("data/indexes/baseline.sqlite3"))
+    ask_parser.add_argument("--config", type=Path, default=Path("configs/generation.json"))
+    ask_parser.add_argument("--model", help="Override with one explicit :free ID; current zero pricing is checked before generation.")
+    ask_parser.add_argument("--inspect-prompt", action="store_true", help="Print exact messages, evidence map, and settings; no provider API call or key needed.")
+    ask_parser.add_argument("--json", action="store_true", dest="json_output")
+    answer_eval_parser = commands.add_parser("evaluate-answers", help="Run the fixed four-case development generation sample; never reads held-out labels.")
+    answer_eval_parser.add_argument("--index", type=Path, default=Path("data/indexes/baseline.sqlite3"))
+    answer_eval_parser.add_argument("--config", type=Path, default=Path("configs/generation.json"))
+    answer_eval_parser.add_argument("--output", type=Path, help="New report under outputs/answers/ (default: timestamped).")
+    answer_eval_parser.add_argument("--inspect-prompt", action="store_true", help="Save prepared prompts only; no provider API calls.")
+    eval_parser = commands.add_parser("evaluate", help="Measure one labeled retrieval split without changing the index.")
+    eval_parser.add_argument("--split", choices=("dev", "heldout"), default="dev")
+    eval_parser.add_argument("--dataset", type=Path, help="Defaults to evals/<split>.json.")
+    eval_parser.add_argument("--index", type=Path, default=Path("data/indexes/baseline.sqlite3"))
+    eval_parser.add_argument("--top-k", type=int, default=5, help="Results per requested version.")
+    eval_parser.add_argument("--output", type=Path, help="Defaults to outputs/evals/<split>-k<k>.json.")
     args = parser.parse_args()
+
+    if args.command in ("ask", "evaluate-answers"):
+        try:
+            config = load_generation_config(args.config)
+            if args.command == "evaluate-answers":
+                stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+                output = args.output or Path("outputs/answers") / f"dev-{stamp}.json"
+                report = run_answer_sample(args.index, root=Path.cwd(), config=config,
+                                           output=output, inspect_only=args.inspect_prompt)
+                print(f"Saved four-case dev {'prompts' if args.inspect_prompt else 'generation run'} -> {output}")
+                for case in report["cases"]:
+                    print(f"{case['id']}: {case['outcome']}")
+                if any(case["outcome"] == "error" for case in report["cases"]):
+                    error = next(case["error"] for case in report["cases"] if case["outcome"] == "error")
+                    parser.exit(1, f"Answer evaluation stopped ({error['kind']}): {error['message']}\n")
+                return
+            if args.model:
+                from dataclasses import replace
+                config = replace(config, model_id=args.model)
+            prepared = prepare_question(args.index, args.question, version=args.version,
+                                        product=args.product, top_k=args.top_k, root=Path.cwd(), config=config)
+            if args.inspect_prompt:
+                print(json.dumps({"mode": "prompt_only", "settings": asdict(config),
+                                  "prepared": asdict(prepared)}, ensure_ascii=False, indent=2))
+                return
+            result = answer_question(prepared, config)
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2) if args.json_output else display_answer(result))
+        except GenerationError as error:
+            parser.exit(1, f"Answer failed ({error.kind}): {error}\n")
+        except (OSError, ValueError, sqlite3.Error) as error:
+            parser.exit(1, f"Answer failed: {error}\n")
+        except KeyboardInterrupt:
+            parser.exit(1, "Answer request interrupted; no automatic retry was made.\n")
+        return
+
+    if args.command == "evaluate":
+        try:
+            dataset = args.dataset or Path("evals") / f"{args.split}.json"
+            output = args.output or Path("outputs/evals") / f"{args.split}-k{args.top_k}.json"
+            report = run_evaluation(dataset, args.index, root=Path.cwd(), split=args.split, top_k=args.top_k, output=output)
+        except (OSError, ValueError, sqlite3.Error) as error:
+            parser.exit(1, f"Evaluation failed: {error}\n")
+        for label in ("single_release", "comparison"):
+            metrics = report[label]
+            if metrics["answerable_questions"]:
+                print(
+                    f"{label}: {metrics['answerable_questions']} answerable; "
+                    f"evidence_recall@{args.top_k}={metrics['evidence_recall_at_k']:.4f}, "
+                    f"MRR@{args.top_k}={metrics['mrr_at_k']:.4f}, "
+                    f"evidence_group_recall@{args.top_k}={metrics['evidence_group_recall_at_k']:.4f}"
+                )
+        overall = report["overall"]
+        print(f"Wrong-version chunks: {overall['wrong_version_chunks']}/{overall['retrieved_chunks']}")
+        print(f"Saved {args.split} report -> {output}")
+        return
 
     if args.command == "index":
         try:
@@ -134,8 +215,8 @@ def main() -> None:
         return
 
     print("DocLens")
-    print("Status: ingestion, chunking, and local dense retrieval available; answer generation is planned.")
-    print("Run: doclens ingest, then doclens index; doclens search requires an explicit --version.")
+    print("Status: ingestion, chunking, retrieval, evaluation, and direct RAG commands implemented.")
+    print("Run: doclens ask QUESTION --version 3.13; add --inspect-prompt for offline evidence inspection.")
     print("Read README.md and docs/roadmap.md to follow the build.")
 
 

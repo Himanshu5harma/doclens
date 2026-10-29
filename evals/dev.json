@@ -1,0 +1,755 @@
+{
+  "schema_version": 1,
+  "name": "doclens-python-v1",
+  "corpus_manifest_sha256": "25f48fd84536b623d9efc056ac8d5f775d71217aae48c4c37bb30ec1d9b3daa8",
+  "source_hashes": {
+    "python-3.12-argparse": "0d1c63a802309b342aa10da133d8411e7c4257586a7459e04e7b41d32f69aa1d",
+    "python-3.12-datetime": "dcc14bde4c477cbeb6707acab9ac9879faf6fba8110cbe1b62ddf5b3f11ef231",
+    "python-3.12-glob": "004139ae659d7c85f9dab93b05e86f726aef659323a1452fb63711d7cc04d9e8",
+    "python-3.12-json": "cb9c8402ff9d193f22068dac44b15af43dd320fd2c28c3f8491d05860593ca0f",
+    "python-3.12-os-path": "8ca54c4d3050017cf92ba4a9f68da83faf9d3e36250f575b08321c2ecabcc126",
+    "python-3.12-pathlib": "298b1f959ae97a4ca4e01fd97d40caf9a3d848c53957e7c82217c190614d4bcd",
+    "python-3.12-re": "e2c3acab59d9075175d2928a5b085cdcda13c9ef952e07a65c1a1b5fefeafca9",
+    "python-3.12-shutil": "64a273ec12e12134a3fbaf123056d780ae1ab4cf8a06da23d3eb35077c891ba4",
+    "python-3.12-tempfile": "a0a0fde98f9d168b5b03cee92ed4a9bb3309669f7ff638c825ab76b02a70d741",
+    "python-3.12-whatsnew": "b248a4c9a0c9d5d1d896976a69e1ae7b457eadeebd4cc6b81a6ead15e2c0c1cb",
+    "python-3.13-argparse": "e0d4299c92784131e378af0b6f99939675ebef412060b970ecabffcc92b5c78f",
+    "python-3.13-datetime": "d52c99322672f26362fd3874da84d308786ce2fc74c2148f01ba36dcc2f8de8f",
+    "python-3.13-glob": "48a176319c49648ebf36d39be58e2dfc33090825f20200f8581a5a670d95ec1d",
+    "python-3.13-json": "ee720eb99f76100770f4992fcc97cd3bc7e5d4f6db0d7a97ebaf6756605f0810",
+    "python-3.13-os-path": "efa8e7e9b989251ce52f492a047a552ee21ece3c804adb89c39cd885d16bc68f",
+    "python-3.13-pathlib": "82ff07ef3e4fddb5887936dde86a704c721af62b789cf99a19db28f8581fd0a9",
+    "python-3.13-re": "5948bf28566e9fdfd3f797809e955f98c6b5525397e4724086aba6b1c2792975",
+    "python-3.13-shutil": "dfbbed9e5d38e7c453a30540604f75a6d90b739384bf1011722a688396f89058",
+    "python-3.13-tempfile": "8c114f83316636a387e16aab3553060d0d0bed7eaca1ec608ea94895d1754c7a",
+    "python-3.13-whatsnew": "0965e3af9446810bc2f02f2558179e07ded0ae68744f67079f9e4008ba433b4f"
+  },
+  "annotation": {
+    "method": "Agent-authored; checked against saved source passages; pending independent human label review.",
+    "labels": "Source/API anchors, with accepted alternative anchors grouped by required evidence region.",
+    "heldout_policy": "Reserve heldout retrieval outputs until the final configuration is frozen; previously inspected smoke questions belong to dev."
+  },
+  "split": "dev",
+  "questions": [
+    {
+      "id": "dev-001",
+      "category": "paraphrase",
+      "query": "How do I create a path from a file URI?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "Use Path.from_uri(uri). The URI must use the file scheme and describe an absolute path.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "Path.from_uri parses file URIs into Path objects.",
+          "references": [
+            {
+              "source_id": "python-3.13-pathlib",
+              "version": "3.13",
+              "anchor": "pathlib.Path.from_uri",
+              "url": "https://docs.python.org/3.13/library/pathlib.html#pathlib.Path.from_uri",
+              "quote": "Return a new path object from parsing a ‘file’ URI. For example:"
+            },
+            {
+              "source_id": "python-3.13-whatsnew",
+              "version": "3.13",
+              "anchor": "pathlib",
+              "url": "https://docs.python.org/3.13/whatsnew/3.13.html#pathlib",
+              "quote": "Add a new constructor for creating Path objects from ‘file’ URIs (file:///), Path.from_uri(). (Contributed by Barney Gale in gh-107465.)"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-002",
+      "category": "paraphrase",
+      "query": "Serialize a Python dictionary to a JSON string",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "Use json.dumps(obj) to return JSON as a str.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "json.dumps returns JSON text as a string.",
+          "references": [
+            {
+              "source_id": "python-3.12-json",
+              "version": "3.12",
+              "anchor": "json.dumps",
+              "url": "https://docs.python.org/3.12/library/json.html#json.dumps",
+              "quote": "Serialize obj to a JSON formatted str using this conversion table. The arguments have the same meaning as in dump()."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-003",
+      "category": "paraphrase",
+      "query": "Convert a pathname wildcard pattern to a regular expression",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "Use glob.translate(pattern), then compile or match the resulting regex; recursive controls double-star behavior.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "glob.translate converts a pathname pattern into a regular expression.",
+          "references": [
+            {
+              "source_id": "python-3.13-glob",
+              "version": "3.13",
+              "anchor": "glob.translate",
+              "url": "https://docs.python.org/3.13/library/glob.html#glob.translate",
+              "quote": "Convert the given path specification to a regular expression for use with re.match(). The path specification can contain shell-style wildcards."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-004",
+      "category": "missing_evidence",
+      "query": "How do I call Path.from_uri to parse a file URI in Python 3.12?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": false,
+      "reference_answer": null,
+      "evidence_groups": [],
+      "unanswerable_reason": "No indexed Python 3.12 source documents Path.from_uri. The 3.13 introduction is outside this requested-version scope. This label means insufficient corpus evidence, not a runtime absence proof."
+    },
+    {
+      "id": "dev-005",
+      "category": "exact",
+      "query": "What tuple does Path.walk yield in Python 3.12, and what controls top-down versus bottom-up traversal?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "It yields (dirpath, dirnames, filenames). top_down=True visits a directory before its subdirectories; False visits after.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "Path.walk yields a three-tuple and documents top_down ordering.",
+          "references": [
+            {
+              "source_id": "python-3.12-pathlib",
+              "version": "3.12",
+              "anchor": "pathlib.Path.walk",
+              "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.Path.walk",
+              "quote": "For each directory in the directory tree rooted at self (including self but excluding ‘.’ and ‘..’), the method yields a 3-tuple of (dirpath, dirnames, filenames)."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-006",
+      "category": "exact",
+      "query": "Which PurePath.relative_to option allows .. entries in Python 3.12?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "Set walk_up=True; the default is False.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "walk_up permits parent-directory entries in relative paths.",
+          "references": [
+            {
+              "source_id": "python-3.12-pathlib",
+              "version": "3.12",
+              "anchor": "pathlib.PurePath.relative_to",
+              "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.PurePath.relative_to",
+              "quote": "When walk_up is false (the default), the path must start with other. When the argument is true, .. entries may be added to form the relative path. In all other cases, such as the paths referencing different drives, ValueError is raised.:"
+            },
+            {
+              "source_id": "python-3.12-whatsnew",
+              "version": "3.12",
+              "anchor": "pathlib",
+              "url": "https://docs.python.org/3.12/whatsnew/3.12.html#pathlib",
+              "quote": "Add walk_up optional parameter to pathlib.PurePath.relative_to() to allow the insertion of .. entries in the result; this behavior is more consistent with os.path.relpath(). (Contributed by Domenico Ragusa in gh-84538.)"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-007",
+      "category": "paraphrase",
+      "query": "How can I reopen a named temporary file after closing it inside a with block and still get context-exit cleanup?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "Leave delete=True and set delete_on_close=False on NamedTemporaryFile; the context exit performs cleanup.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "NamedTemporaryFile can delay deletion until context exit.",
+          "references": [
+            {
+              "source_id": "python-3.12-tempfile",
+              "version": "3.12",
+              "anchor": "tempfile.NamedTemporaryFile",
+              "url": "https://docs.python.org/3.12/library/tempfile.html#tempfile.NamedTemporaryFile",
+              "quote": "If delete is true (the default) and delete_on_close is true (the default), the file is deleted as soon as it is closed. If delete is true and delete_on_close is false, the file is deleted on context manager exit only, or else when the file-like object is finalized. Deletion is"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-008",
+      "category": "exact",
+      "query": "Besides str, what input types and encodings does json.loads support in Python 3.13?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "It also accepts bytes and bytearray; byte input should be UTF-8, UTF-16, or UTF-32.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "json.loads accepts bytes/bytearray and documents supported encodings.",
+          "references": [
+            {
+              "source_id": "python-3.13-json",
+              "version": "3.13",
+              "anchor": "json.loads",
+              "url": "https://docs.python.org/3.13/library/json.html#json.loads",
+              "quote": "Changed in version 3.6: s can now be of type bytes or bytearray. The input encoding should be UTF-8, UTF-16 or UTF-32."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-009",
+      "category": "exact",
+      "query": "What changed about positional count and flags arguments to re.sub in Python 3.13?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "Passing count and flags positionally is deprecated; they will become keyword-only.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "The re.sub version note deprecates positional count/flags.",
+          "references": [
+            {
+              "source_id": "python-3.13-re",
+              "version": "3.13",
+              "anchor": "re.sub",
+              "url": "https://docs.python.org/3.13/library/re.html#re.sub",
+              "quote": "Deprecated since version 3.13: Passing count and flags as positional arguments is deprecated. In future Python versions they will be keyword-only parameters."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-010",
+      "category": "paraphrase",
+      "query": "Can datetime.fromisoformat use a separator other than T, and can it parse fractional hours?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "Any single Unicode character may replace T. Fractional hours and minutes are not supported.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "fromisoformat documents separator flexibility and fractional-hour limitations.",
+          "references": [
+            {
+              "source_id": "python-3.12-datetime",
+              "version": "3.12",
+              "anchor": "datetime.datetime.fromisoformat",
+              "url": "https://docs.python.org/3.12/library/datetime.html#datetime.datetime.fromisoformat",
+              "quote": "The T separator may be replaced by any single unicode character."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-011",
+      "category": "exact",
+      "query": "How can I catch argparse.ArgumentError for an invalid value instead of exiting in Python 3.13?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "Construct ArgumentParser(exit_on_error=False) and catch ArgumentError for the invalid value.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "exit_on_error=False enables manually catching the demonstrated parse error.",
+          "references": [
+            {
+              "source_id": "python-3.13-argparse",
+              "version": "3.13",
+              "anchor": "exit-on-error",
+              "url": "https://docs.python.org/3.13/library/argparse.html#exit-on-error",
+              "quote": "If the user would like to catch errors manually, the feature can be enabled by setting exit_on_error to False:"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-012",
+      "category": "exact",
+      "query": "How does argparse add_argument(deprecated=True) behave in Python 3.13?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "It marks the argument deprecated and prints a warning to stderr when the argument is used.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "The deprecated option warns when a deprecated argument is used.",
+          "references": [
+            {
+              "source_id": "python-3.13-argparse",
+              "version": "3.13",
+              "anchor": "deprecated",
+              "url": "https://docs.python.org/3.13/library/argparse.html#deprecated",
+              "quote": "During a project’s lifetime, some arguments may need to be removed from the command line. Before removing them, you should inform your users that the arguments are deprecated and will be removed. The deprecated keyword argument of add_argument(), which defaults to False,"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-013",
+      "category": "paraphrase",
+      "query": "How do I make a recursive glob with ** descend into dot-directories in Python 3.12?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "Use recursive=True and include_hidden=True with glob.glob.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "include_hidden allows double-star traversal of hidden directories.",
+          "references": [
+            {
+              "source_id": "python-3.12-glob",
+              "version": "3.12",
+              "anchor": "glob.glob",
+              "url": "https://docs.python.org/3.12/library/glob.html#glob.glob",
+              "quote": "If include_hidden is true, “**” pattern will match hidden directories."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-014",
+      "category": "multi_source",
+      "query": "Compare shutil.copyfile and shutil.copy2 in Python 3.12: which copies metadata as well as file contents?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "copyfile copies contents without metadata. copy2 also attempts to preserve metadata, with platform limitations.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "copyfile copies contents without metadata.",
+          "references": [
+            {
+              "source_id": "python-3.12-shutil",
+              "version": "3.12",
+              "anchor": "shutil.copyfile",
+              "url": "https://docs.python.org/3.12/library/shutil.html#shutil.copyfile",
+              "quote": "Copy the contents (no metadata) of the file named src to a file named dst and return dst in the most efficient way possible. src and dst are path-like objects or path names given as strings."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "copy2 attempts to preserve file metadata.",
+          "references": [
+            {
+              "source_id": "python-3.12-shutil",
+              "version": "3.12",
+              "anchor": "shutil.copy2",
+              "url": "https://docs.python.org/3.12/library/shutil.html#shutil.copy2",
+              "quote": "Identical to copy() except that copy2() also attempts to preserve file metadata."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-015",
+      "category": "multi_source",
+      "query": "How do glob.glob and Path.glob differ for names beginning with a dot in Python 3.13?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "glob normally requires a pattern that starts with a dot for dot-names. pathlib does not treat dot-names specially, like include_hidden=True.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "glob has special default dot-name matching behavior.",
+          "references": [
+            {
+              "source_id": "python-3.13-glob",
+              "version": "3.13",
+              "anchor": "module-glob",
+              "url": "https://docs.python.org/3.13/library/glob.html#module-glob",
+              "quote": "By default, files beginning with a dot (.) can only be matched by patterns that also start with a dot, unlike fnmatch.fnmatch() or pathlib.Path.glob(). For tilde and shell variable expansion, use os.path.expanduser() and os.path.expandvars()."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "pathlib treats dot-names as ordinary names.",
+          "references": [
+            {
+              "source_id": "python-3.13-pathlib",
+              "version": "3.13",
+              "anchor": "comparison-to-the-glob-module",
+              "url": "https://docs.python.org/3.13/library/pathlib.html#comparison-to-the-glob-module",
+              "quote": "Files beginning with a dot are not special in pathlib. This is like passing include_hidden=True to glob.glob()."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-016",
+      "category": "multi_source",
+      "query": "In Python 3.13, when should I use json.dump instead of json.dumps, and what does each output to?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "dump serializes to a writable file-like object supporting str. dumps returns a JSON-formatted str.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "dump writes text to a file-like object.",
+          "references": [
+            {
+              "source_id": "python-3.13-json",
+              "version": "3.13",
+              "anchor": "json.dump",
+              "url": "https://docs.python.org/3.13/library/json.html#json.dump",
+              "quote": "fp (file-like object) – The file-like object obj will be serialized to. The json module always produces str objects, not bytes objects, therefore fp.write() must support str input."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "dumps returns JSON text.",
+          "references": [
+            {
+              "source_id": "python-3.13-json",
+              "version": "3.13",
+              "anchor": "json.dumps",
+              "url": "https://docs.python.org/3.13/library/json.html#json.dumps",
+              "quote": "Serialize obj to a JSON formatted str using this conversion table. The arguments have the same meaning as in dump()."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-017",
+      "category": "multi_source",
+      "query": "Compare default context-manager cleanup for NamedTemporaryFile and TemporaryDirectory in Python 3.13.",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "NamedTemporaryFile deletes its file by default; TemporaryDirectory removes the directory and its contents on context completion.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "NamedTemporaryFile removes its file under default deletion settings.",
+          "references": [
+            {
+              "source_id": "python-3.13-tempfile",
+              "version": "3.13",
+              "anchor": "tempfile.NamedTemporaryFile",
+              "url": "https://docs.python.org/3.13/library/tempfile.html#tempfile.NamedTemporaryFile",
+              "quote": "If delete is true (the default) and delete_on_close is true (the default), the file is deleted as soon as it is closed. If delete is true and delete_on_close is false, the file is deleted on context manager exit only, or else when the file-like object is finalized. Deletion is"
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "TemporaryDirectory removes its directory tree.",
+          "references": [
+            {
+              "source_id": "python-3.13-tempfile",
+              "version": "3.13",
+              "anchor": "tempfile.TemporaryDirectory",
+              "url": "https://docs.python.org/3.13/library/tempfile.html#tempfile.TemporaryDirectory",
+              "quote": "This class securely creates a temporary directory using the same rules as mkdtemp(). The resulting object can be used as a context manager (see Examples). On completion of the context or destruction of the temporary directory object, the newly created temporary directory and all"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-018",
+      "category": "multi_source",
+      "query": "Why can os.path.commonprefix produce an invalid path while commonpath returns a valid path in Python 3.12?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "commonprefix compares character prefixes; commonpath computes a common sub-path and returns a valid path.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "commonprefix can produce invalid paths.",
+          "references": [
+            {
+              "source_id": "python-3.12-os-path",
+              "version": "3.12",
+              "anchor": "os.path.commonprefix",
+              "url": "https://docs.python.org/3.12/library/os.path.html#os.path.commonprefix",
+              "quote": "This function may return invalid paths because it works a character at a time. If you need a common path prefix, then the algorithm implemented in this function is not secure. Use commonpath() for finding a common path prefix."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "commonpath returns a valid path.",
+          "references": [
+            {
+              "source_id": "python-3.12-os-path",
+              "version": "3.12",
+              "anchor": "os.path.commonpath",
+              "url": "https://docs.python.org/3.12/library/os.path.html#os.path.commonpath",
+              "quote": "Return the longest common sub-path of each pathname in the sequence paths. Raise ValueError if paths contain both absolute and relative pathnames, if paths are on different drives, or if paths is empty. Unlike commonprefix(), this returns a valid path."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-019",
+      "category": "paraphrase",
+      "query": "Why can isfile() and islink() both be true for the same filesystem path?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "isfile follows symbolic links and checks the target is a regular file, so both checks can be true.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "isfile follows symbolic links.",
+          "references": [
+            {
+              "source_id": "python-3.13-os-path",
+              "version": "3.13",
+              "anchor": "os.path.isfile",
+              "url": "https://docs.python.org/3.13/library/os.path.html#os.path.isfile",
+              "quote": "Return True if path is an existing regular file. This follows symbolic links, so both islink() and isfile() can be true for the same path."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-020",
+      "category": "paraphrase",
+      "query": "What arguments does the rmtree onexc callback receive in Python 3.12, and how is it different from onerror?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "onexc receives function, path, and the exception object. onerror instead receives a sys.exc_info tuple as its third argument.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "rmtree documents callback arguments and the onerror distinction.",
+          "references": [
+            {
+              "source_id": "python-3.12-shutil",
+              "version": "3.12",
+              "anchor": "shutil.rmtree",
+              "url": "https://docs.python.org/3.12/library/shutil.html#shutil.rmtree",
+              "quote": "If onexc is provided, it must be a callable that accepts three parameters: function, path, and excinfo."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-021",
+      "category": "comparison",
+      "query": "Compare converting a path to a file URI in Python 3.12 with creating a Path from a file URI in Python 3.13. Which APIs are documented?",
+      "product": "python",
+      "versions": [
+        "3.12",
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "The 3.12 PurePath.as_uri method formats an absolute path as a file URI; 3.13 Path.from_uri constructs a path by parsing a file URI.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "3.12 documents formatting a path as a file URI.",
+          "references": [
+            {
+              "source_id": "python-3.12-pathlib",
+              "version": "3.12",
+              "anchor": "pathlib.PurePath.as_uri",
+              "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.PurePath.as_uri",
+              "quote": "Represent the path as a file URI. ValueError is raised if the path isn’t absolute."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "3.13 documents parsing a file URI into Path.",
+          "references": [
+            {
+              "source_id": "python-3.13-pathlib",
+              "version": "3.13",
+              "anchor": "pathlib.Path.from_uri",
+              "url": "https://docs.python.org/3.13/library/pathlib.html#pathlib.Path.from_uri",
+              "quote": "Return a new path object from parsing a ‘file’ URI. For example:"
+            },
+            {
+              "source_id": "python-3.13-whatsnew",
+              "version": "3.13",
+              "anchor": "pathlib",
+              "url": "https://docs.python.org/3.13/whatsnew/3.13.html#pathlib",
+              "quote": "Add a new constructor for creating Path objects from ‘file’ URIs (file:///), Path.from_uri(). (Contributed by Barney Gale in gh-107465.)"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-022",
+      "category": "comparison",
+      "query": "Compare making a glob pattern literal in Python 3.12 with turning a glob pattern into a regular expression in Python 3.13.",
+      "product": "python",
+      "versions": [
+        "3.12",
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "glob.escape in 3.12 escapes wildcard metacharacters for literal matching. glob.translate in 3.13 creates a regex from a pathname pattern.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "3.12 glob.escape makes literal matching possible.",
+          "references": [
+            {
+              "source_id": "python-3.12-glob",
+              "version": "3.12",
+              "anchor": "glob.escape",
+              "url": "https://docs.python.org/3.12/library/glob.html#glob.escape",
+              "quote": "Escape all special characters ('?', '*' and '['). This is useful if you want to match an arbitrary literal string that may have special characters in it. Special characters in drive/UNC sharepoints are not escaped, e.g. on Windows escape('//?/c:/Quo vadis?.txt') returns"
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "3.13 glob.translate creates a regular expression.",
+          "references": [
+            {
+              "source_id": "python-3.13-glob",
+              "version": "3.13",
+              "anchor": "glob.translate",
+              "url": "https://docs.python.org/3.13/library/glob.html#glob.translate",
+              "quote": "Convert the given path specification to a regular expression for use with re.match(). The path specification can contain shell-style wildcards."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "dev-023",
+      "category": "missing_evidence",
+      "query": "What Kubernetes CPU and memory resource limits should I set for a DocLens deployment?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": false,
+      "reference_answer": null,
+      "evidence_groups": [],
+      "unanswerable_reason": "The curated corpus contains Python library references and release notes, not Kubernetes or DocLens deployment guidance."
+    },
+    {
+      "id": "dev-024",
+      "category": "missing_evidence",
+      "query": "How do I configure OAuth2 authentication in the Requests library?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": false,
+      "reference_answer": null,
+      "evidence_groups": [],
+      "unanswerable_reason": "Requests and OAuth2 provider documentation are outside the curated corpus. Generic HTTP-related mentions are not authentication instructions."
+    }
+  ]
+}

@@ -75,7 +75,7 @@ Encoding and validation happen before database replacement. SQLite is built in a
 - The actual pinned local model encoded all 1,474 chunks into 768-dimensional normalized vectors without truncation. Maximum document length, including prefix/special tokens: 1,932 of 8,192 tokens.
 - Two actual builds produced 1,474 rows with unique IDs, retaining the 720/754 version split and the same chunk-set fingerprint. This verifies replacement behavior; SQLite file bytes need not match because build timestamps change.
 - Index payload text hashes and source/version columns matched, all stored vectors had the expected length and unit norm within float32 tolerance, and searches left the database bytes unchanged.
-- All 57 offline tests passed. Artificial vectors isolate filter-before-ranking, scores, ties, configuration mismatches, stale-row removal, metadata refresh, token overflow, invalid vectors, failed-build preservation, consistent manifest capture, and JSON CLI behavior. Those tests establish behavior, not semantic quality.
+- At the initial retrieval-feature checkpoint, 57 offline tests passed. Artificial vectors isolate filter-before-ranking, scores, ties, configuration mismatches, stale-row removal, metadata refresh, token overflow, invalid vectors, failed-build preservation, consistent manifest capture, and JSON CLI behavior. The current suite additionally includes evaluation checks. Test doubles establish behavior, not semantic quality.
 
 Observed real-model smoke results at top-k 3:
 
@@ -86,6 +86,6 @@ Observed real-model smoke results at top-k 3:
 | Convert a wildcard pattern to a regular expression | 3.13 | `pathlib` pattern-language section, score 0.6564 | `glob.translate` ranked second; a concrete ranking case to evaluate |
 | Serialize a dictionary to a JSON string | 3.12 | `json.dumps`, score 0.6426 | Relevant serialization passage ranked first |
 
-All returned results stayed within the requested version; the candidate pools were 720 for 3.12 and 754 for 3.13. These four smoke queries are not a labeled evaluation set, a held-out split, or measured recall/MRR. No similarity threshold, insufficient-evidence decision, answer generator, or LangGraph workflow is implemented. Next follow [the evaluation plan](../evals/README.md) before tuning retrieval.
+All returned results stayed within the requested version; the candidate pools were 720 for 3.12 and 754 for 3.13. These four smoke queries alone are not a labeled evaluation set, a held-out split, or measured recall/MRR. They now belong to development in [the provisional evaluation baseline](../evals/baseline-dev.md). Search ranks passages without an answerability threshold; the [direct answer pipeline](answers.md) now adds generation and explicit evidence-gap outcomes, with a separate [four-case live review](../evals/generation-dev-review.md). LangGraph remains unimplemented. Review [the evaluation plan](../evals/README.md) and label limitations before tuning retrieval.
 
 The local smoke details are stored in ignored `data/reports/retrieval-smoke.json`; the CLI does not create this report automatically.

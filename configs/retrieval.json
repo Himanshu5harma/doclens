@@ -1,0 +1,10 @@
+{
+  "model_id": "nomic-ai/modernbert-embed-base",
+  "revision": "d556a88e332558790b210f7bdbe87da2fa94a8d8",
+  "dimensions": 768,
+  "max_tokens": 8192,
+  "document_prefix": "search_document: ",
+  "query_prefix": "search_query: ",
+  "batch_size": 8,
+  "cpu_threads": 4
+}

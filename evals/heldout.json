@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "name": "doclens-python-v1",
+  "corpus_manifest_sha256": "25f48fd84536b623d9efc056ac8d5f775d71217aae48c4c37bb30ec1d9b3daa8",
+  "source_hashes": {
+    "python-3.12-argparse": "0d1c63a802309b342aa10da133d8411e7c4257586a7459e04e7b41d32f69aa1d",
+    "python-3.12-datetime": "dcc14bde4c477cbeb6707acab9ac9879faf6fba8110cbe1b62ddf5b3f11ef231",
+    "python-3.12-glob": "004139ae659d7c85f9dab93b05e86f726aef659323a1452fb63711d7cc04d9e8",
+    "python-3.12-json": "cb9c8402ff9d193f22068dac44b15af43dd320fd2c28c3f8491d05860593ca0f",
+    "python-3.12-os-path": "8ca54c4d3050017cf92ba4a9f68da83faf9d3e36250f575b08321c2ecabcc126",
+    "python-3.12-pathlib": "298b1f959ae97a4ca4e01fd97d40caf9a3d848c53957e7c82217c190614d4bcd",
+    "python-3.12-re": "e2c3acab59d9075175d2928a5b085cdcda13c9ef952e07a65c1a1b5fefeafca9",
+    "python-3.12-shutil": "64a273ec12e12134a3fbaf123056d780ae1ab4cf8a06da23d3eb35077c891ba4",
+    "python-3.12-tempfile": "a0a0fde98f9d168b5b03cee92ed4a9bb3309669f7ff638c825ab76b02a70d741",
+    "python-3.12-whatsnew": "b248a4c9a0c9d5d1d896976a69e1ae7b457eadeebd4cc6b81a6ead15e2c0c1cb",
+    "python-3.13-argparse": "e0d4299c92784131e378af0b6f99939675ebef412060b970ecabffcc92b5c78f",
+    "python-3.13-datetime": "d52c99322672f26362fd3874da84d308786ce2fc74c2148f01ba36dcc2f8de8f",
+    "python-3.13-glob": "48a176319c49648ebf36d39be58e2dfc33090825f20200f8581a5a670d95ec1d",
+    "python-3.13-json": "ee720eb99f76100770f4992fcc97cd3bc7e5d4f6db0d7a97ebaf6756605f0810",
+    "python-3.13-os-path": "efa8e7e9b989251ce52f492a047a552ee21ece3c804adb89c39cd885d16bc68f",
+    "python-3.13-pathlib": "82ff07ef3e4fddb5887936dde86a704c721af62b789cf99a19db28f8581fd0a9",
+    "python-3.13-re": "5948bf28566e9fdfd3f797809e955f98c6b5525397e4724086aba6b1c2792975",
+    "python-3.13-shutil": "dfbbed9e5d38e7c453a30540604f75a6d90b739384bf1011722a688396f89058",
+    "python-3.13-tempfile": "8c114f83316636a387e16aab3553060d0d0bed7eaca1ec608ea94895d1754c7a",
+    "python-3.13-whatsnew": "0965e3af9446810bc2f02f2558179e07ded0ae68744f67079f9e4008ba433b4f"
+  },
+  "annotation": {
+    "method": "Agent-authored; checked against saved source passages; pending independent human label review.",
+    "labels": "Source/API anchors, with accepted alternative anchors grouped by required evidence region.",
+    "heldout_policy": "Reserve heldout retrieval outputs until the final configuration is frozen; previously inspected smoke questions belong to dev."
+  },
+  "split": "heldout",
+  "questions": [
+    {
+      "id": "heldout-001",
+      "category": "paraphrase",
+      "query": "Does computing a relative filename require the target to exist, and what happens across different Windows drives?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "os.path.relpath is a path computation and does not inspect existence. Different drives on Windows raise ValueError.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "relpath documents filesystem independence and cross-drive errors.",
+          "references": [
+            {
+              "source_id": "python-3.13-os-path",
+              "version": "3.13",
+              "anchor": "os.path.relpath",
+              "url": "https://docs.python.org/3.13/library/os.path.html#os.path.relpath",
+              "quote": "Return a relative filepath to path either from the current directory or from an optional start directory. This is a path computation: the filesystem is not accessed to confirm the existence or nature of path or start. On Windows, ValueError is raised when path and start are on"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-002",
+      "category": "exact",
+      "query": "How does shutil.copytree dirs_exist_ok affect an existing destination tree?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "False raises FileExistsError when the destination exists. True continues into existing directories and overwrites corresponding files.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "copytree documents the dirs_exist_ok behavior.",
+          "references": [
+            {
+              "source_id": "python-3.12-shutil",
+              "version": "3.12",
+              "anchor": "shutil.copytree",
+              "url": "https://docs.python.org/3.12/library/shutil.html#shutil.copytree",
+              "quote": "If dirs_exist_ok is false (the default) and dst already exists, a FileExistsError is raised. If dirs_exist_ok is true, the copying operation will continue if it encounters existing directories, and files within the dst tree will be overwritten by corresponding files from the src"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-003",
+      "category": "paraphrase",
+      "query": "When does a SpooledTemporaryFile move buffered data from memory onto disk?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "It rolls to disk when max_size is exceeded or fileno() is requested.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "SpooledTemporaryFile documents memory-to-disk triggers.",
+          "references": [
+            {
+              "source_id": "python-3.13-tempfile",
+              "version": "3.13",
+              "anchor": "tempfile.SpooledTemporaryFile",
+              "url": "https://docs.python.org/3.13/library/tempfile.html#tempfile.SpooledTemporaryFile",
+              "quote": "This class operates exactly as TemporaryFile() does, except that data is spooled in memory until the file size exceeds max_size, or until the file’s fileno() method is called, at which point the contents are written to disk and operation proceeds as with TemporaryFile()."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-004",
+      "category": "exact",
+      "query": "What does JSONDecoder.raw_decode return when JSON text has trailing data?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "It returns the decoded Python value and the index where the JSON document ended, allowing trailing data to be handled separately.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "raw_decode returns the decoded object and end index.",
+          "references": [
+            {
+              "source_id": "python-3.12-json",
+              "version": "3.12",
+              "anchor": "json.JSONDecoder.raw_decode",
+              "url": "https://docs.python.org/3.12/library/json.html#json.JSONDecoder.raw_decode",
+              "quote": "Decode a JSON document from s (a str beginning with a JSON document) and return a 2-tuple of the Python representation and the index in s where the document ended."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-005",
+      "category": "multi_source",
+      "query": "How do re.fullmatch and re.search differ in how much of a string must match?",
+      "product": "python",
+      "versions": [
+        "3.12"
+      ],
+      "answerable": true,
+      "reference_answer": "fullmatch requires the entire string to match; search scans for the first matching location anywhere in the string.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "fullmatch requires a whole-string match.",
+          "references": [
+            {
+              "source_id": "python-3.12-re",
+              "version": "3.12",
+              "anchor": "re.fullmatch",
+              "url": "https://docs.python.org/3.12/library/re.html#re.fullmatch",
+              "quote": "If the whole string matches the regular expression pattern, return a corresponding Match. Return None if the string does not match the pattern; note that this is different from a zero-length match."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "search scans for a matching location.",
+          "references": [
+            {
+              "source_id": "python-3.12-re",
+              "version": "3.12",
+              "anchor": "re.search",
+              "url": "https://docs.python.org/3.12/library/re.html#re.search",
+              "quote": "Scan through string looking for the first location where the regular expression pattern produces a match, and return a corresponding Match. Return None if no position in the string matches the pattern; note that this is different from finding a zero-length match at some point in"
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-006",
+      "category": "paraphrase",
+      "query": "Which timedelta operation returns the complete duration in seconds, and what precision limitation applies to extremely long intervals?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "Use total_seconds(); intervals greater than about 270 years can lose microsecond accuracy on most platforms.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "total_seconds returns duration seconds and documents a long-interval limitation.",
+          "references": [
+            {
+              "source_id": "python-3.13-datetime",
+              "version": "3.13",
+              "anchor": "datetime.timedelta.total_seconds",
+              "url": "https://docs.python.org/3.13/library/datetime.html#datetime.timedelta.total_seconds",
+              "quote": "Return the total number of seconds contained in the duration. Equivalent to td / timedelta(seconds=1). For interval units other than seconds, use the division form directly (e.g. td / timedelta(microseconds=1))."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-007",
+      "category": "comparison",
+      "query": "Compare os.path.realpath(strict=True) in Python 3.12 and 3.13 when part of the path does not exist.",
+      "product": "python",
+      "versions": [
+        "3.12",
+        "3.13"
+      ],
+      "answerable": true,
+      "reference_answer": "Both release lines document re-raising the first error with strict=True, including FileNotFoundError for a missing path.",
+      "evidence_groups": [
+        {
+          "id": "e1",
+          "fact": "3.12 strict realpath re-raises missing-path errors.",
+          "references": [
+            {
+              "source_id": "python-3.12-os-path",
+              "version": "3.12",
+              "anchor": "os.path.realpath",
+              "url": "https://docs.python.org/3.12/library/os.path.html#os.path.realpath",
+              "quote": "If strict is True, the first error encountered when evaluating the path is re-raised. In particular, FileNotFoundError is raised if path does not exist, or another OSError if it is otherwise inaccessible."
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "fact": "3.13 strict realpath re-raises missing-path errors.",
+          "references": [
+            {
+              "source_id": "python-3.13-os-path",
+              "version": "3.13",
+              "anchor": "os.path.realpath",
+              "url": "https://docs.python.org/3.13/library/os.path.html#os.path.realpath",
+              "quote": "If strict is True, the first error encountered when evaluating the path is re-raised. In particular, FileNotFoundError is raised if path does not exist, or another OSError if it is otherwise inaccessible."
+            }
+          ]
+        }
+      ],
+      "unanswerable_reason": null
+    },
+    {
+      "id": "heldout-008",
+      "category": "missing_evidence",
+      "query": "What PostgreSQL transaction isolation level should a psycopg application select?",
+      "product": "python",
+      "versions": [
+        "3.13"
+      ],
+      "answerable": false,
+      "reference_answer": null,
+      "evidence_groups": [],
+      "unanswerable_reason": "The corpus does not include PostgreSQL or psycopg transaction documentation."
+    }
+  ]
+}

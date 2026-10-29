@@ -2,11 +2,11 @@
 
 A version-aware RAG assistant for technical documentation, with source citations and retrieval evaluation.
 
-**Status: local semantic retrieval implemented.** The curated corpus has 20 official Python documentation pages across versions 3.12 and 3.13. Commands ingest documents, build inspectable chunks, persist local embeddings, and search within an explicit release. Answer generation, version-comparison workflows, and formal evaluation remain planned; retrieval quality has not been measured on a labeled dataset.
+**Status: the direct baseline RAG works end to end.** The corpus has 20 official Python documentation pages across versions 3.12 and 3.13. `ask` retrieves version-scoped evidence, generates through an explicit OpenRouter free model, and validates answer structure/citations. A four-case live development run produced two supported-question answers and two appropriate evidence-gap responses, with zero reported model cost. Assistant review found incomplete `copy2` preservation caveats and weak citation placement. Broader quality validation and independent human review remain open; LangGraph is not implemented.
 
 ## The problem
 
-Technical answers depend on the product version. A relevant passage from the wrong release can produce a convincing but incorrect answer. DocLens will retrieve evidence for the requested version, make sources inspectable, and explain when the indexed documents cannot support an answer.
+Technical answers depend on the product version. A relevant passage from the wrong release can produce a convincing but incorrect answer. DocLens retrieves evidence for the requested version and makes sources inspectable. Its answer pipeline asks for supported claims and explicit evidence gaps, with structural checks and a separate semantic review requirement.
 
 ## Planned demo
 
@@ -144,11 +144,39 @@ Search opens the saved index read-only, filters the version before ranking, and 
 
 See [the retrieval guide](docs/retrieval.md) for the model/configuration, local resource tradeoffs, code walkthrough, update behavior, smoke results, and limits. The first URI result for 3.13 is `Path.from_uri`; the same 3.12 query returns a related reverse operation. Similarity is a ranking signal and does not by itself establish answer support.
 
+## Evaluate the unchanged baseline
+
+```bash
+uv run --extra retrieval python -m doclens evaluate --split dev --top-k 5
+```
+
+The source-checked set has 24 development questions and eight reserved held-out questions. The command checks corpus/index/label provenance, then saves per-query passages, misses, configuration, hashes, and timing to `outputs/evals/dev-k5.json`. It evaluates source-anchor coverage and ranking; it does not grade generated answers or tune retrieval. The held-out split has not been scored.
+
+Read [the metric definitions and dataset format](evals/README.md) and [the provisional development results](evals/baseline-dev.md). The review records a missed required source in a comparison and a candidate annotation gap. Independent human label review remains necessary before treating the numbers as reliable quality claims.
+
 Run the offline behavior checks (they do not download or run a model) with:
 
 ```bash
 uv run python -m unittest discover -s tests -v
 ```
+
+## Ask with evidence
+
+The configurable default is `nvidia/nemotron-3.5-super-vl:free`, verified against OpenRouter's public zero input/output pricing on 2026-10-28. Every live generation rechecks pricing, enforces zero-price routing, and disables fallbacks. Questions and selected documentation are sent to OpenRouter and its provider; the selected free endpoint logs inputs. See [setup, data policy, design, and code walkthrough](docs/answers.md) before using a key.
+
+```bash
+# No API key or provider call: inspect exact messages and supplied evidence
+uv run --extra retrieval python -m doclens ask "How do I create a path from a file URI?" --version 3.13 --inspect-prompt
+
+# After setting OPENROUTER_API_KEY in your environment
+uv run --extra retrieval python -m doclens ask "How do I create a path from a file URI?" --version 3.13
+uv run --extra retrieval python -m doclens ask "What Kubernetes CPU and memory resource limits should I set for a DocLens deployment?" --version 3.13 --json
+
+# Fixed four-question development sample; maximum four completions, stops on error
+uv run --extra retrieval python -m doclens evaluate-answers
+```
+
+Answers can be `answered`, `partial`, or `insufficient_evidence`. Provider errors and invalid responses exit nonzero instead of being treated as evidence insufficiency. Citation links come from retrieved metadata; valid IDs alone do not establish claim support. The [live development review](evals/generation-dev-review.md) separates structural success from correctness, support, citation, and abstention findings for the four saved outputs. This establishes a working baseline with known limitations, not general accuracy. Held-out retrieval/generation have not been run. The last offline suite passed 110 tests.
 
 ## How we will build it
 
@@ -176,10 +204,10 @@ doclens/
   AGENTS.md             Instructions and learning workflow for Codex chats
   corpus/               Curated source manifest
   docs/                 Architecture, milestones, and learning notes
-  evals/                Evaluation design; labeled examples come later
+  evals/                Development/held-out labels, metric definitions, baseline review
   configs/              Pinned embedding configuration
-  src/doclens/          Ingestion, chunking, local encoding/search, and CLI
-  tests/                Offline ingestion, chunking, and retrieval checks
+  src/doclens/          Ingestion, chunking, local retrieval/evaluation, and CLI
+  tests/                Offline component and metric checks
   pyproject.toml        Project metadata and packaging
 ```
 

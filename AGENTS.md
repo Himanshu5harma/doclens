@@ -33,6 +33,8 @@ DocLens is a version-aware RAG assistant for technical documentation. The user w
 - Keep credentials out of the repository. Do not introduce paid services before they are needed and their tradeoffs have been explained.
 - Do not claim features, completed checks, quality scores, or evaluation results that do not exist. Retrieval failure alone does not establish that a feature is absent from a release.
 - Read `evals/README.md` before evaluation work. Use meaningful, proportionate validation for implementation changes; documentation-only changes need no application tests.
+- Default evaluation to the development split. Preserve held-out retrieval outputs during tuning, and do not claim assistant-authored labels have had independent human review.
+- The direct answer pipeline uses an explicit OpenRouter :free model with current price checks and no paid routing/fallback. Keep provider/invalid-response failures distinct from insufficient evidence. Live generation must be verified before calling the baseline RAG complete; do not introduce LangGraph automatically.
 
 ## Maintain continuity
 
@@ -56,6 +58,10 @@ uv run python -m doclens chunk
 uv sync --extra retrieval
 uv run --extra retrieval python -m doclens index
 uv run --extra retrieval python -m doclens search "How do I create a path from a file URI?" --version 3.13
+uv run --extra retrieval python -m doclens evaluate --split dev --top-k 5
+uv run --extra retrieval python -m doclens ask "How do I create a path from a file URI?" --version 3.13 --inspect-prompt
+uv run --extra retrieval python -m doclens ask "How do I create a path from a file URI?" --version 3.13
+uv run --extra retrieval python -m doclens evaluate-answers
 ```
 
 To check manifest syntax:
