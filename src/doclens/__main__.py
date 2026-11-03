@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import sqlite3
+import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -60,6 +61,8 @@ def main() -> None:
     ask_parser.add_argument("--model", help="Override with one explicit :free ID; current zero pricing is checked before generation.")
     ask_parser.add_argument("--inspect-prompt", action="store_true", help="Print exact messages, evidence map, and settings; no provider API call or key needed.")
     ask_parser.add_argument("--json", action="store_true", dest="json_output")
+    ask_parser.add_argument("--workflow", choices=("direct", "graph"), default="direct", help="Execution path; direct remains the default.")
+    ask_parser.add_argument("--trace", action="store_true", help="With --workflow graph, stream local node summaries to stderr.")
     answer_eval_parser = commands.add_parser("evaluate-answers", help="Run the fixed four-case development generation sample; never reads held-out labels.")
     answer_eval_parser.add_argument("--index", type=Path, default=Path("data/indexes/baseline.sqlite3"))
     answer_eval_parser.add_argument("--config", type=Path, default=Path("configs/generation.json"))
@@ -72,6 +75,9 @@ def main() -> None:
     eval_parser.add_argument("--top-k", type=int, default=5, help="Results per requested version.")
     eval_parser.add_argument("--output", type=Path, help="Defaults to outputs/evals/<split>-k<k>.json.")
     args = parser.parse_args()
+
+    if args.command == "ask" and args.trace and args.workflow != "graph":
+        parser.error("--trace requires --workflow graph.")
 
     if args.command in ("ask", "evaluate-answers"):
         try:
@@ -91,13 +97,27 @@ def main() -> None:
             if args.model:
                 from dataclasses import replace
                 config = replace(config, model_id=args.model)
-            prepared = prepare_question(args.index, args.question, version=args.version,
-                                        product=args.product, top_k=args.top_k, root=Path.cwd(), config=config)
+            if args.workflow == "graph":
+                from doclens.workflow import run_workflow
+
+                def trace(event):
+                    print(json.dumps(event, ensure_ascii=False), file=sys.stderr, flush=True)
+
+                state = run_workflow(args.index, args.question, version=args.version,
+                                     product=args.product, top_k=args.top_k, root=Path.cwd(), config=config,
+                                     inspect_only=args.inspect_prompt, on_update=trace if args.trace else None)
+                if "error" in state:
+                    error = state["error"]
+                    raise GenerationError(error.kind, f"{error.stage}: {error.message}")
+                prepared, result = state["prepared"], state.get("result")
+            else:
+                prepared = prepare_question(args.index, args.question, version=args.version,
+                                            product=args.product, top_k=args.top_k, root=Path.cwd(), config=config)
+                result = None if args.inspect_prompt else answer_question(prepared, config)
             if args.inspect_prompt:
                 print(json.dumps({"mode": "prompt_only", "settings": asdict(config),
                                   "prepared": asdict(prepared)}, ensure_ascii=False, indent=2))
                 return
-            result = answer_question(prepared, config)
             print(json.dumps(asdict(result), ensure_ascii=False, indent=2) if args.json_output else display_answer(result))
         except GenerationError as error:
             parser.exit(1, f"Answer failed ({error.kind}): {error}\n")
