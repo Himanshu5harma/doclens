@@ -1,21 +1,30 @@
 # DocLens
 
-A version-aware RAG assistant for technical documentation, with source citations and retrieval evaluation.
+A version-aware engineering knowledge assistant with inspectable source citations. Recommended initial public focus: practical file-processing questions for Python developers maintaining tools on 3.12/3.13.
 
-**Status: the direct baseline RAG works end to end.** The corpus has 20 official Python documentation pages across versions 3.12 and 3.13. `ask` retrieves version-scoped evidence, generates through an explicit OpenRouter free model, and validates answer structure/citations. A four-case live development run produced two supported-question answers and two appropriate evidence-gap responses, with zero reported model cost. Assistant review found incomplete `copy2` preservation caveats and weak citation placement. Broader quality validation and independent human review remain open; LangGraph is not implemented.
+**Status: a working direct RAG baseline and an optional single-release LangGraph workflow.** The corpus has 20 official Python documentation pages across versions 3.12 and 3.13. `ask` retrieves version-scoped evidence, generates through an explicit OpenRouter free model, and validates answer structure/citations. A four-case live direct run produced two supported-question answers and two appropriate evidence-gap responses, with zero reported model cost. Assistant review found incomplete `copy2` preservation caveats and weak citation placement. The current v2 prompt/format policy addresses these in instructions and placement checks; live behavior under v2 remains unverified. The graph reuses that behavior with local node traces; its full answer path is verified offline, with real-index prompt inspection. Broader quality validation and independent human review remain open.
+
+**Expanded service: Stage 1 workspace/source ownership is implemented and locally verified.** A separate optional FastAPI service verifies real Keycloak-issued access tokens, checks current PostgreSQL membership, and registers/lists/reads owned source metadata. Owner/editor/viewer and cross-workspace boundaries were checked against the actual database under a restricted runtime role; RLS and browser sign-in are not implemented. Registration does not fetch/index content. The useful public reader, worker, expanded retrieval/answers, new adapters and visitor interface remain planned. See the [Stage 1 guide](docs/stage1-workspaces.md) and [expanded plan](docs/expanded-rag-plan.md). The existing RAG CLI remains available; there is no public web app yet.
 
 ## The problem
 
-Technical answers depend on the product version. A relevant passage from the wrong release can produce a convincing but incorrect answer. DocLens retrieves evidence for the requested version and makes sources inspectable. Its answer pipeline asks for supported claims and explicit evidence gaps, with structural checks and a separate semantic review requirement.
+Python file-processing tools can behave differently across releases and platforms. Developers need to find the applicable API, understand cleanup/metadata limits, and inspect the supporting documentation. DocLens currently addresses version-scoped documentation lookup and inspectable evidence. The planned public experience adds useful curated examples and source/revision context; authenticated workspaces support later team-specific knowledge and saved investigations/annotations. Structural checks require a separate semantic review.
 
-## Planned demo
+## Planned public experience
 
-- Ask a question about a specific release and inspect the cited passages.
-- Compare a feature across two releases, with evidence for both versions.
-- Ask a question missing from the corpus and inspect an explicit insufficient-evidence response.
-- Compare a simple retrieval baseline with measured improvements.
+A first visit should explain the scope, offer a useful question/version selection without mandatory sign-up for public reading, show an evidence-grounded answer with citations, and let the visitor expand the actual supplied passages. The example buttons will use the actual pipeline. Provider errors, missing evidence and limits stay visible; no canned answers or paid fallbacks. Real private workspace access and privileged source administration remain authenticated/authorized.
 
-Start with one product and a small, curated collection of official documentation and release notes. Select and record the corpus before implementing ingestion.
+Five proposed public questions, pending full source verification and evaluation:
+
+- How do I convert a file URI to a path in Python 3.13, and which inputs are invalid?
+- Should my backup script use `copyfile` or `copy2`, and which metadata can still be lost?
+- Why can reopening a `NamedTemporaryFile` on Windows fail, and how should cleanup work?
+- How do I find files recursively, including hidden directories, and can I rely on their order?
+- How can I replace a generated configuration file atomically, and what filesystem/durability limits remain?
+
+The [public question/evidence plan](docs/expanded-rag-plan.md#public-questions-and-required-evidence) ties each request to credible sources and qualifications. The `os` material needed for the last question is not in the current baseline corpus; these examples are not measured successes. The initial Python audience is recommended, not a silent switch to the cloud-native alternative discussed separately.
+
+Visitors may optionally explore visibly labeled synthetic runbooks/tickets showing team differences, outdated instructions, partial evidence and workspace behavior. Those collections stay separate from default public evidence. Synthetic fixtures support controlled demonstrations/tests; public demo switching is not proof of private isolation. We will review visitor task usefulness and semantic support separately from engineering tests. The original Python baseline/reports and held-out reservation remain preserved. See the [first-visit criteria](docs/expanded-rag-plan.md#first-visit-journey-and-success-criteria).
 
 ## Development setup
 
@@ -176,26 +185,55 @@ uv run --extra retrieval python -m doclens ask "What Kubernetes CPU and memory r
 uv run --extra retrieval python -m doclens evaluate-answers
 ```
 
-Answers can be `answered`, `partial`, or `insufficient_evidence`. Provider errors and invalid responses exit nonzero instead of being treated as evidence insufficiency. Citation links come from retrieved metadata; valid IDs alone do not establish claim support. The [live development review](evals/generation-dev-review.md) separates structural success from correctness, support, citation, and abstention findings for the four saved outputs. This establishes a working baseline with known limitations, not general accuracy. Held-out retrieval/generation have not been run. The last offline suite passed 110 tests.
+Answers can be `answered`, `partial`, or `insufficient_evidence`. Provider errors and invalid responses exit nonzero instead of being treated as evidence insufficiency. Citation links come from retrieved metadata; valid IDs alone do not establish claim support. The [live development review](evals/generation-dev-review.md) separates structural success from correctness, support, citation, and abstention findings for the four saved outputs. This establishes a working baseline with known limitations, not general accuracy. Held-out retrieval/generation have not been run.
+
+The pending baseline grounding check remains: verify qualification preservation and citation placement under v2 live output. The [offline audit](evals/grounding-v2-dev.md) explains the checks and bounded comparison. The expanded plan preserves that uncertainty; no new model outputs or held-out results are claimed. Only public/synthetic material is suitable for the current free-endpoint demo; private/customer data requires a separate provider/privacy decision.
+
+## Inspect the optional LangGraph workflow
+
+```bash
+uv sync --extra retrieval --extra graph
+uv run --extra retrieval --extra graph python -m doclens ask "How do I create a path from a file URI?" --version 3.13 --workflow graph --inspect-prompt --trace
+```
+
+The graph prepares the same evidence/prompt and stops before generation when inspection is requested. Without `--inspect-prompt`, it generates once and validates through the existing functions. `--trace` shows local node summaries on stderr, preserving answer/inspection JSON on stdout. Direct execution remains the default. Cloud tracing and automatic retries are disabled. The [workflow guide](docs/langgraph-first-step.md) explains state, nodes, edges, offline parity, and real output. The last recorded full offline run passed 136 tests with both extras installed; Stage 0 planning did not rerun it. Expanded investigation/comparison routes remain later work.
 
 ## How we will build it
 
-| Milestone | Deliverable | Learning outcome |
+| Stage | Deliverable | Status |
 | --- | --- | --- |
-| 0: Setup | This repository, scope, architecture, roadmap | Explain the product and its evidence requirements |
-| 1: Corpus | Source manifest, downloaded documents, parsed sections | Understand provenance, versions, and parsing |
-| 2: Retrieval baseline | Chunking, semantic embeddings, version filtering, inspectable search | Explain what gets retrieved and why |
-| 3: Evaluation | Labeled questions, retrieval metrics, baseline report | Diagnose retrieval failures before tuning |
-| 4: Answers | Grounded generation, citations, insufficient-evidence behavior | Distinguish a plausible answer from a supported answer |
-| 5: Experiments | Hybrid search and reranking comparisons | Measure quality, latency, and cost tradeoffs |
-| 6: LangGraph | Explicit state, routing, bounded retries, version comparison | Orchestrate the workflow and inspect failures |
-| 7: Demo and results | Usable demo, reproducible results, failure analysis | Explain the complete system and its limitations |
+| 0: Plan | Product, corpus/acceptance matrix, library ownership, migration plan | Complete; documentation only |
+| 1: Workspace ownership | Authenticated API, PostgreSQL migrations, memberships, source registration | Implemented; real local Keycloak/PostgreSQL verified |
+| 2: Ingestion workflow | Persisted jobs, Celery/Redis, verifiable snapshots and recovery | Next, only when requested |
+| 3: Source/format units | Useful repository material/Markdown and issue exports; PDF when justified | Planned, one adapter unit at a time |
+| 4: Retrieval | Exact authorized PostgreSQL/pgvector search with local embeddings | Planned |
+| 5: Answers | Direct grounded answer API and bounded live evaluation | Planned |
+| 6: Lifecycle | Configuration-aware incremental sync, revision publication, deletion/revocation | Planned |
+| 7: Experiments | Lexical versus dense, then fusion and justified reranking | Planned, one experiment at a time |
+| 8: Operations and public delivery | Reproducible startup/recovery, safe telemetry, separate minimal visitor-view unit | Planned; usefulness requires an actual walkthrough |
+| 9: LangGraph | Useful investigation routes over the evaluated expanded pipeline | Planned; existing optional graph preserved |
 
-See [the roadmap](docs/roadmap.md), [the planned architecture](docs/architecture.md), and [the evaluation plan](evals/README.md).
+See [the roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [expanded plan](docs/expanded-rag-plan.md), and [evaluation rules](evals/README.md). Stage 1's installed versions and verification are recorded separately from future library candidates. Earlier baseline milestones remain in the roadmap as history.
+
+## Run the local workspace/source service
+
+Requires Docker, Python 3.12+ and uv. From the repository root:
+
+```bash
+uv sync --extra service --group dev
+uv run --extra service python scripts/stage1_dev.py prepare
+docker compose -f compose.stage1.yaml up -d
+uv run --extra service python scripts/stage1_dev.py bootstrap
+uv run --extra service uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+```
+
+In another terminal, `uv run --extra service python scripts/stage1_dev.py request /api/v1/workspaces` obtains a real local token without printing it and shows authorized workspace metadata. The [complete guide](docs/stage1-workspaces.md#run-and-inspect) includes source registration, denied access, the example JSON, credential/storage boundaries and cleanup. These are local demonstration service accounts, not a finished human login flow. Loopback HTTP/Keycloak development mode is for local use.
+
+The full combined verification passed **191 tests** (plus 121 unittest subtests), including 27 real PostgreSQL/Keycloak cases. Default offline pytest passed 164 with those 27 integration cases skipped. The preserved unittest suite separately passed all 136. Use `DOCLENS_RUN_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service python -m pytest tests -q` after starting the local services; it creates/drops a separate disposable test database. Source/corpus/index/report preservation and quality limitations are recorded in [progress](docs/progress.md). These checks establish tested behavior, not production security or semantic answer quality.
 
 ## Continuing in a new chat
 
-Open a new Codex chat in this repository and say “Continue from the current checkpoint.” [AGENTS.md](AGENTS.md) records the project instructions and the preference for small, explained, user-written implementation steps. It directs the assistant to read [the current checkpoint](docs/progress.md) and the project docs before continuing. Keep the checkpoint current as work is completed; use [learning notes](docs/learning-notes.md) for your own explanations and experiments.
+Open a new Codex chat in this repository and say “Continue from the current checkpoint.” [AGENTS.md](AGENTS.md) records the stage-based mentoring instructions and directs the assistant to read [the checkpoint](docs/progress.md), [expanded plan](docs/expanded-rag-plan.md), and project docs first. Each requested stage includes design, implementation, verification and explanation, then stops at its boundary. Use [learning notes](docs/learning-notes.md) for your own explanations and experiments.
 
 ## Repository layout
 

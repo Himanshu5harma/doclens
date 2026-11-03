@@ -1,5 +1,21 @@
 # Evaluation plan
 
+## Expanded-service evaluation boundary
+
+The [2026-11-02 service plan](../docs/expanded-rag-plan.md) introduces separate, explicitly versioned expanded-corpus development data and reports; none are created or scored in Stage 0. Its [acceptance matrix](../docs/expanded-rag-plan.md#small-demo-corpus-and-planned-acceptance-matrix) covers supported lookup, cross-source answers, wrong-version distractors, missing/partial evidence, conflicting/superseded guidance and cross-workspace denial. These are planned cases, not labels/results or security evidence. Synthetic runbooks/tickets must be identified in source content and metadata, with their assertions separated from official product facts.
+
+The 2026-11-03 refinement adds [five proposed public questions](../docs/expanded-rag-plan.md#public-questions-and-required-evidence) for a recommended Python file-processing audience. They are pending full passage/version/terms verification and semantic evaluation, not additions to frozen `dev.json` or evidence of current success. Candidate source research alone is not answer verification. Keep default public collections and optional guided/synthetic collections distinct in inputs, prompts, reports, visitor labels and review results. Do not treat repeated synthetic guidance as independent confirmation of official behavior.
+
+Evaluate **visitor usefulness** separately: observe an actual audience-relevant walkthrough of purpose → real question/version → answer/citations → supplied passages → optional scenario; record task outcomes, confusion and feedback with sample/participant scope. Do not invent visitors or call assistant walkthroughs independent human validation. Evaluate **semantic value** separately against supplied facts/qualifiers, claim support, citation coverage, correct/false abstention and follow-up questions. Evaluate **engineering behavior** through actual access, persistence, retrieval, worker/recovery and quota tests. A structural pass, closed issue/accepted comment, zero leak count on a fixture, or attractive interface alone establishes none of the other goals. Visitor/semantic/public-delivery criteria remain unmeasured; Stage 1's local authentication/ownership subset has the separate evidence below.
+
+Stage 1 uses endpoint/database allow/deny integration tests for authentication and workspace/source ownership. Later retrieval/evidence/citation checks must test deliberate unauthorized matches; a zero observed leak count on a small fixture is not a broad security guarantee. Keep authorization behavior, retrieval coverage, answer correctness/support/citations/abstention, and operational recovery as separate evaluations. No numeric service targets are set before defining a workload. Version any new labels and corpus/configuration changes; do not silently add expanded sources or workspace labels to the existing measured baseline.
+
+Stage 1 was implemented and locally verified on 2026-11-03: 28 new offline authentication/settings/redaction checks and 27 real PostgreSQL/Keycloak cases, alongside all 136 preserved baseline tests (191 combined, plus 121 unittest subtests reported by pytest). The default offline run passed 164 and skipped the 27 opt-in integration cases. Keycloak actually issued service-account access tokens verified through its JWKS; signed RSA fixtures cover negative profiles separately. An actual local HTTP report records registration/read success and role/workspace denial. See [the Stage 1 guide](../docs/stage1-workspaces.md). This is application-scoped SQL authorization, not RLS, browser login, semantic evaluation, independent human review, or production-security evidence. No frozen labels or held-out results were changed and no generation/retrieval evaluation was run.
+
+The baseline datasets/reports and held-out reservation below remain preserved. Do not open/run held-out questions during development; byte-hash preservation checks are allowed. No new generation/retrieval or application test run is needed for Stage 0 documentation. Pending baseline v2 live improvement and independent review are not superseded by the larger plan.
+
+## Existing baseline evaluation
+
 The evaluation runner and first dataset are implemented. [dev.json](dev.json) contains 24 development questions; [heldout.json](heldout.json) reserves eight questions whose retrieval outputs have not been run. Labels and reference answers were authored by the assistant and checked against saved source passages. **Independent human label review is pending**, so the [development baseline](baseline-dev.md) is provisional.
 
 Run against the existing local index:
@@ -42,6 +58,8 @@ Comparison retrieval runs the same unchanged query separately for each version, 
 
 ## Answer metrics
 
+The current answer policy is `evidence-grounding-v2`, with explicit qualifier instructions and local citation-format validation. New prepared records/reports identify the policy; saved unversioned records retain their original replay contract. The [v2 development audit](grounding-v2-dev.md) compares prompts and format behavior on frozen evidence without new retrieval/generation. It detects the old URI answer's placement problem but still accepts the known incomplete copying answer structurally. Live semantic improvement is pending; formatting errors must not be counted as correct abstentions.
+
 The direct answer pipeline and fixed four-case development runner are implemented and verified live. The user's `dev-20261029T034534302245Z.json` contains four structurally valid outputs: two supported-question answers and two appropriate insufficient-evidence responses, all reporting zero model cost. A [separate qualitative assistant review](generation-dev-review.md) records correctness, support, citation, and abstention findings, including incomplete `copy2` caveats and weak citation placement. This is a working baseline with limited development evidence, not independent human validation, general accuracy, or a numeric claim-support/citation-quality score.
 
 See [setup/design](../docs/answers.md). `uv run --extra retrieval python -m doclens evaluate-answers --inspect-prompt` saves prompts without a provider call. Without that flag, at most four completions are attempted, with no retries and stop-on-error behavior. Reports stay under `outputs/answers/`, separately from frozen retrieval results. No additional API calls or retrieval runs were made during the saved-output review.
@@ -57,6 +75,8 @@ The sample is fixed to dev-001, dev-014, dev-004, and dev-023: supported lookup,
 Use human review for the initial small dataset. If LLM judges are added later, record their model, prompt, and agreement with a manually reviewed subset.
 
 ## Experiment report
+
+The optional [single-release LangGraph workflow](../docs/langgraph-first-step.md) has separate orchestration verification: 19 workflow tests, actual real-index prompt-only execution, and deterministic replay of the four saved development results. The replay completion fixtures are reconstructed from validated results and retain historical metadata; they are not new model outputs or original raw HTTP responses. No held-out or fresh provider calls were made, and the saved labels/reports remain unchanged. Local verification artifacts live under `outputs/workflows/`. These checks establish direct/graph behavior parity, not better retrieval or semantic answer quality.
 
 Save the corpus manifest hash, code revision, embedding identifier, chunking settings, filters, retriever configuration, candidate count, top-k, reranker and generator identifiers where used, and per-example outcomes. Report latency and cost measurements with their scope and sample count.
 

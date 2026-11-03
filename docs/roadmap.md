@@ -1,6 +1,29 @@
 # Build and learning roadmap
 
-Build one milestone at a time. Run it, inspect intermediate output, and explain the result in your own words before moving on.
+Build one complete useful feature per stage. Explain behavior/data flow, existing code, libraries/tradeoffs and acceptance checks before coding; show actual results and teach the important paths afterward. Stop at the boundary until the user requests the next stage. Separate adapter and experiment units must not become one large implementation dump.
+
+## Current expanded service stages
+
+The 2026-11-02 user-authorized handoff expands DocLens into a version-aware, permission-aware engineering support and incident knowledge assistant. It supersedes the earlier Markdown-before-workspace proposal. The baseline milestones below are historical references; completed baseline work does not mark the expanded service complete. Detailed decisions, library/version gates, the public/synthetic demo corpus, and acceptance matrix are in [the expanded plan](expanded-rag-plan.md).
+
+The 2026-11-03 refinement keeps the stage order and Stage 1 boundary: serve real public questions and demonstrate engineering behavior, with optional visibly labeled synthetic scenarios. The initial Python file-processing audience/collection is recommended, not a user-selected domain pivot. [Five public questions](expanded-rag-plan.md#public-questions-and-required-evidence) and [first-visit/usefulness criteria](expanded-rag-plan.md#first-visit-journey-and-success-criteria) are proposed, not measured successes. Shared published public collections are allowed; private/admin endpoints remain authenticated. Formats follow valuable evidence, so PDF is conditional.
+
+- [x] **Stage 0 — Reconcile the plan.** Inspect the repository, record purpose/users, sources/questions, current versus planned behavior, library responsibilities, migration/preservation strategy, mentoring boundaries, and concrete Stage 1 checks. Documentation only; no app scaffolding/dependency installation. Verified results belong in [progress](progress.md).
+- [x] **Stage 1 — Authenticated workspace/source ownership.** Implemented on 2026-11-03: optional FastAPI/Pydantic API, PostgreSQL/SQLAlchemy/psycopg/Alembic, Keycloak access-token verification, membership roles, source registration/list/read. Actual endpoint/DB allow/deny tests use a non-owner restricted runtime role; real Keycloak-issued service-account tokens and JWKS were exercised. Combined suite: 191 tests; schema/model consistency check passes. No RLS, browser sign-in, anonymous reader or ingestion claim. See the [implementation/verification guide](stage1-workspaces.md).
+- [ ] **Stage 2 — One recoverable ingestion workflow.** Register/sync one HTTPS/Python-HTML source through a persisted job, Celery/Redis worker, verifiable raw snapshot and job progress/error output. Done when duplicate delivery, bounded retry, missed-dispatch recovery and interruption leave consistent records without partial publication.
+- [ ] **Stage 3 — Source/format units.** Add useful revision-pinned repository material/Markdown and curated structured issue exports as separate lessons. Schedule text-based PDF/page citations only after identifying a valuable source. Done per selected unit when raw/normalized inspection confirms structure, source/collection/workspace/version/revision/hash/authority/access metadata, locations and readable errors; document deferred formats. OCR/multimodal work remains separate.
+- [ ] **Stage 4 — Scoped persistent retrieval.** Existing local embedding contract plus PostgreSQL/pgvector exact authorized search. Done when access/product/version filters precede ranking, repeated indexing is safe, revision/provenance is inspectable, real queries work and queries do not mutate content/indexes. Preserve SQLite measurements; ANN is not assumed.
+- [ ] **Stage 5 — Grounded answer API.** Direct authorized retrieval → budgeted evidence → SDK transport → validation → trusted citations, with explicit public-reader grants/limits alongside authenticated workspace routes. Done after offline contracts plus bounded new-dev live generation, with correctness, support, citation quality, partial/missing evidence, abstention and failures reviewed separately. Public examples execute the actual pipeline; synthetic collections stay separate by default. Keep free-routing/price/privacy constraints and old reports; no LangGraph extension yet.
+- [ ] **Stage 6 — Document/permission lifecycle.** Content/configuration-aware incremental detection, safe revision publication, stale-chunk retirement, confirmed deletions/revocations and failed-sync reconciliation. Done when unchanged/changed/deleted/denied/interrupted outcomes are tested. Confirmed revocation blocks retrieval independently of reprocessing; failed listing/download is not deletion.
+- [ ] **Stage 7 — Retrieval experiments.** Separate units for lexical versus dense, fusion, and then justified reranking. Done per experiment with one changed variable, versioned frozen dev inputs, full configurations/outputs, successes/regressions and scoped latency/resource/cost observations. PostgreSQL full-text ranking is not BM25. Held-out stays reserved.
+- [ ] **Stage 8 — Operate and verify/public delivery.** Complete safe tracing/metrics, health/readiness, CI/static checks, reproducible containers, migrations, backup/restore and bounded load/failure/recovery checks. A separate minimal visitor-view unit after the grounded API supports the planned public journey. Done with actual deployment/recovery evidence, an actual visitor walkthrough and honest limits; usefulness/semantic outcomes are distinct from backend checks. No invented numeric targets. Basic logs/tests/settings/migrations begin earlier.
+- [ ] **Stage 9 — Useful LangGraph investigation.** After expanded direct RAG works and is evaluated, add approved single-version/comparison/evidence-gathering routes, typed state, separately authorized evidence, strict call/retry limits and traces. Done with explicit route/orchestration evaluation separate from answer quality; no autonomous production actions.
+
+Current next stage: **Stage 2, after the user requests it**. Stage 1 ends at source ownership; do not automatically add a worker or fetch registered pages. Preserve all current user changes, baseline artifacts, frozen labels/reports and the optional graph. Use new explicit service schemas, expanded-corpus/evaluation versions and separate outputs. Production practices are a goal; production readiness requires verified security, deployment and recovery behavior.
+
+## Historical baseline milestones
+
+The milestones below retain the original implementation record and unresolved quality work. They are not the current service-stage order. The last recorded full offline run passed 136 tests; earlier live baseline generation works with limited development evidence, while v2 live improvement and independent review remain pending.
 
 ## Milestone 0: Project setup
 
@@ -63,13 +86,18 @@ Explain: Could an answer generator recover from a retrieval result that contains
 - [x] Check citation identifiers and requested versions (including malformed/truncated response rejection).
 - [x] Verify live end-to-end generation using the configured free model (four saved dev outputs, 2026-10-29).
 - [x] Review answer correctness, claim support, citation quality, and abstention separately on the bounded dev sample (assistant review with explicit caveats).
-- [ ] Improve metadata-preservation qualifications and claim-local citation placement; expand quality validation and obtain independent review.
+- [x] Add explicit qualification instructions and paragraph/list/code citation-placement checks (v2 policy, verified offline).
+- [ ] Verify the v2 model behavior with preserved before/after outputs; expand semantic quality validation and obtain independent review.
 
 Done when: an answer can be inspected against its evidence, and unsupported questions are included in evaluation.
 
-The working direct baseline RAG is complete for this implementation scope as of 2026-10-29. The [live development review](../evals/generation-dev-review.md) records four structurally valid generations, two supported-question answers, two appropriate abstentions, and zero reported model cost. It also records incomplete `copy2` preservation caveats and weak citation placement. Broader quality validation, held-out assessment, and independent human review remain open. LangGraph has not been implemented.
+The working direct baseline RAG is complete for this implementation scope as of 2026-10-29. The [live development review](../evals/generation-dev-review.md) records four structurally valid generations, two supported-question answers, two appropriate abstentions, and zero reported model cost. It also records incomplete `copy2` preservation caveats and weak citation placement. Broader quality validation, held-out assessment, and independent human review remain open. A single-release LangGraph wrapper was subsequently added without changing that answer behavior.
 
 Explain: Why can an answer have correctly formatted citations and still be unsupported?
+
+## Proposed RAG expansion
+
+Historical proposal, superseded by the user-authorized Stage 0 handoff later on 2026-11-02. The earlier recommendation put website/local Markdown adapters before workspace partitioning. The current service plan instead begins with authenticated workspace/source ownership, then recoverable ingestion and separate adapter units. The acquisition/format/document-purpose distinction and preservation rules still apply. See [current stages](#current-expanded-service-stages).
 
 ## Milestone 5: Improve retrieval through experiments
 
@@ -83,9 +111,10 @@ Done when: a report isolates the effect of each change and includes concrete suc
 
 ## Milestone 6: Add LangGraph and version comparison
 
-The user requested an explanation of the first LangGraph lesson after verifying baseline RAG. The [proposed first unit](langgraph-first-step.md) reuses the single-release pipeline with typed state, explicit nodes, an inspection branch, and local execution traces. This is a proposal only; dependency installation and graph implementation have not begun. Retrieval experiments above remain unimplemented.
+The [first LangGraph unit](langgraph-first-step.md) is implemented as of 2026-11-01: a single-release graph with typed state, existing prepare/generate/validate functions, an inspection branch, terminal errors, and local node traces. Direct execution remains the default. Verified by offline contracts/replay and actual prompt-only graph execution; no new live generation or quality improvement is claimed. Retrieval experiments above remain unimplemented.
 
-- [ ] Define workflow state and nodes using the existing components.
+- [x] Define workflow state and nodes using the existing components.
+- [x] Add inspect/answer routing and local node traces with offline direct/graph parity checks.
 - [ ] Route questions into a single-release or comparison path.
 - [ ] Retrieve evidence separately for each release in a comparison.
 - [ ] Add a bounded query-rewrite path and inspectable traces.
