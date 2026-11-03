@@ -1,0 +1,9 @@
+{
+  "name": "Python 3.13 pathlib reference",
+  "connector_kind": "https_html",
+  "product": "python",
+  "version": "3.13",
+  "document_type": "reference",
+  "url": "https://docs.python.org/3.13/library/pathlib.html",
+  "source_terms_url": "https://docs.python.org/3.13/license.html"
+}

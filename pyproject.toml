@@ -23,6 +23,22 @@ graph = [
     "langgraph>=1.2,<2",
     "langsmith>=0.4,<1",
 ]
+service = [
+    "alembic>=1.16,<2",
+    "fastapi>=0.118,<1",
+    "httpx>=0.28,<1",
+    "psycopg[binary]>=3.2,<4",
+    "pydantic>=2.14,<3",
+    "pydantic-settings>=2.10,<3",
+    "pyjwt[crypto]>=2.10,<3",
+    "sqlalchemy>=2.1,<2.2",
+    "uvicorn>=0.35,<1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+]
