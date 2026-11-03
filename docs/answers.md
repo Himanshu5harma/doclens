@@ -81,6 +81,8 @@ Zero supplied passages yields local insufficiency without a provider call. With 
 
 ## Evaluation and limitations
 
+The current prompt/format policy is `evidence-grounding-v2`. It explicitly asks for material limitations and best-effort qualifiers, citations at the end of each prose paragraph/list item, and a citation or cited explanation immediately after each code example. Prepared inputs and new evaluation reports record the policy ID. The local format checker rejects violations as `invalid_answer`; it cannot establish factual support or completeness of caveats. Older unversioned saved inputs retain their original validation rules for replay. See [the v2 offline audit and pending live comparison](../evals/grounding-v2-dev.md).
+
 ```bash
 # Prepare the fixed four-case dev sample without calling the provider
 uv run --extra retrieval python -m doclens evaluate-answers --inspect-prompt

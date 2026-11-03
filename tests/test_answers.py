@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 from doclens.__main__ import main
 from doclens.answers import (
-    AnswerStatus, answer_question, assemble_evidence, display_answer, prepare_question, validate_answer,
+    PROMPT_POLICY_ID, AnswerStatus, answer_question, assemble_evidence, display_answer, prepare_question, validate_answer,
 )
 from doclens.chunk import ChunkPolicy
 from doclens.embeddings import EmbeddingConfig
@@ -179,6 +179,62 @@ class AnswerValidationTests(unittest.TestCase):
         with self.assertRaises(GenerationError) as error:
             answer_question(self.prepared, CONFIG, client=client)
         self.assertEqual(error.exception.kind, "rate_limit")
+
+    def test_each_paragraph_needs_its_own_citation(self):
+        bad = "Use the documented conversion.\n\nIt requires an absolute file URI. [E1]"
+        with self.assertRaisesRegex(GenerationError, "Every prose paragraph") as error:
+            validate_answer(completion(answer=bad), self.prepared)
+        self.assertEqual(error.exception.kind, "invalid_answer")
+        good = "Use the documented conversion. [E1]\n\nIt requires an absolute file URI. [E1]"
+        self.assertEqual(validate_answer(completion(answer=good), self.prepared).answer, good)
+
+    def test_each_list_item_needs_citation_and_wrapped_text_is_supported(self):
+        for bad in ("- Convert a file URI.\n- Use an absolute path. [E1]",
+                    "1. Convert a file URI.\n2. Use an absolute path. [E1]"):
+            with self.subTest(bad=bad), self.assertRaisesRegex(GenerationError, "list item"):
+                validate_answer(completion(answer=bad), self.prepared)
+        good = "## Usage\n\n- Convert a file URI\n  with the documented API. [E1]\n- Use an absolute file URI. [E1]"
+        self.assertEqual(validate_answer(completion(answer=good), self.prepared).answer, good)
+
+    def test_code_needs_citation_after_each_example(self):
+        for bad in ("Source for the example. [E1]\n\n" + CODE,
+                    CODE + "\n\n" + CODE + "\n[E1]",
+                    CODE + "\n## More information\n\nExplanation. [E1]"):
+            with self.subTest(bad=bad), self.assertRaises(GenerationError):
+                validate_answer(completion(answer=bad), self.prepared)
+        for good in (CODE + "\n[E1]", CODE + "\n\nThis uses the documented\nconversion. [E1]"):
+            with self.subTest(good=good):
+                self.assertEqual(validate_answer(completion(answer=good), self.prepared).answer, good)
+
+    def test_citation_inside_paragraph_does_not_cover_uncited_ending(self):
+        with self.assertRaisesRegex(GenerationError, "Every prose paragraph"):
+            validate_answer(completion(answer="Use this API. [E1] It also guarantees unrelated behavior."), self.prepared)
+        good = "Use this API [E1]."
+        self.assertEqual(validate_answer(completion(answer=good), self.prepared).answer, good)
+
+    def test_archived_unversioned_records_keep_their_original_format_contract(self):
+        self.assertEqual(self.prepared.prompt_policy_id, PROMPT_POLICY_ID)
+        archived = replace(self.prepared, prompt_policy_id=None)
+        old_style = "Opening explanation.\n\nFinal explanation. [E1]"
+        self.assertEqual(validate_answer(completion(answer=old_style), archived).answer, old_style)
+        with self.assertRaisesRegex(GenerationError, "Unknown prepared prompt policy"):
+            validate_answer(completion(), replace(self.prepared, prompt_policy_id="unrecognized"))
+
+    def test_partial_answers_use_same_citation_contract_and_insufficiency_stays_separate(self):
+        with self.assertRaisesRegex(GenerationError, "Every prose paragraph"):
+            validate_answer(completion(status="partial", answer="Uncited part.\n\nCited part. [E1]",
+                                       gaps=["Additional documentation needed."]), self.prepared)
+        result = validate_answer(completion(status="insufficient_evidence", answer="", citations=[],
+                                            gaps=["The requested behavior is not covered by these passages."]), self.prepared)
+        self.assertEqual(result.status, AnswerStatus.INSUFFICIENT)
+        self.assertFalse(result.citations)
+
+    def test_citation_format_is_not_a_semantic_support_check(self):
+        # Deliberate counterexample: valid formatting/IDs do not establish entailment.
+        unsupported = "This API preserves ownership on every platform without exception. [E1]"
+        result = validate_answer(completion(answer=unsupported), self.prepared)
+        self.assertEqual(result.status, AnswerStatus.ANSWERED)
+        self.assertEqual(result.answer, unsupported)
 
 
 class PipelineTests(unittest.TestCase):

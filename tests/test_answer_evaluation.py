@@ -11,6 +11,7 @@ from doclens.answer_evaluation import DEVELOPMENT_IDS, run_answer_sample
 from doclens.chunk import ChunkPolicy, chunk_document
 from doclens.embeddings import EmbeddingConfig
 from doclens.generation import Completion, GenerationConfig, GenerationError
+from doclens.answers import PROMPT_POLICY_ID
 from doclens.parse import parse_html
 from doclens.records import document_from_dict
 from doclens.retrieval import build_index
@@ -76,8 +77,10 @@ class AnswerEvaluationTests(unittest.TestCase):
         self.assertEqual(report["split"], "dev")
         self.assertEqual(report["maximum_completion_requests"], 4)
         self.assertEqual(report["semantic_review_status"], "pending")
+        self.assertEqual(report["prompt_policy_id"], PROMPT_POLICY_ID)
         self.assertEqual([case["id"] for case in report["cases"]], list(DEVELOPMENT_IDS))
         for case in report["cases"]:
+            self.assertEqual(case["prepared"]["prompt_policy_id"], PROMPT_POLICY_ID)
             self.assertTrue(case["structural_validation_passed"])
             self.assertIsNone(case["semantic_review"]["correctness"])
             self.assertFalse(case["semantic_review"]["independent_human_review"])

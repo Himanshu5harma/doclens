@@ -6,7 +6,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from doclens.answers import answer_question, prepare_question
+from doclens.answers import PROMPT_POLICY_ID, answer_question, prepare_question
 from doclens.embeddings import EmbeddingConfig, LocalEncoder
 from doclens.evaluation import _code_snapshot, load_catalog, load_questions, validate_snapshot
 from doclens.files import write_atomic
@@ -77,6 +77,7 @@ def run_answer_sample(index: Path, *, root: Path, config: GenerationConfig,
         "maximum_completion_requests": 4, "automatic_retries": 0,
         "dataset_sha256": hashlib.sha256(data_bytes).hexdigest(), "index_sha256": index_hash,
         "index_metadata": catalog.metadata, "generation_settings": asdict(config), "code": _code_snapshot(root),
+        "prompt_policy_id": PROMPT_POLICY_ID,
         "annotation": data.get("annotation"), "semantic_review_status": "pending",
         "claims": "Structural validation is automated. No semantic score or independent human validation is implied.",
         "cases": cases,
