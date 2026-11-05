@@ -1,6 +1,6 @@
 # Expanded RAG product and implementation plan
 
-Decision date: 2026-11-02; product clarification and Stage 1 implementation: 2026-11-03 (Asia/Kolkata). Stage 0 was documentation only. The user subsequently explicitly authorized Stage 1, now locally verified; [its implementation guide](stage1-workspaces.md) records versions, actual commands/results and limits. Stages 2–9 remain planned. The plan supersedes the earlier adapters-before-workspaces recommendation. Advance one stage only when requested; Stage 1 does not authorize automatic ingestion. Stage 3 and Stage 7 contain separate learning units, each with its own boundary.
+Decision date: 2026-11-02; product clarification/Stage 1: 2026-11-03; Stage 2: 2026-11-04 (Asia/Kolkata). Stage 0 was documentation only. The user subsequently authorized Stages 1 and 2, now locally verified; [Stage 1](stage1-workspaces.md) and [Stage 2](stage2-ingestion.md) record exact versions, commands/results and limits. Stages 3–9 remain planned. Advance one stage only when requested; stop after Stage 2. Stage 3 and Stage 7 contain separate learning units, each with its own boundary.
 
 ## Product and users
 
@@ -19,8 +19,8 @@ The illustrative E104/release-2.4 upload question in the handoff describes the i
 | Area | Implemented baseline | Expanded service work |
 | --- | --- | --- |
 | Corpus | 20 Python HTML pages across 3.12/3.13; verified provenance and code preservation | Separate useful public collection; optional labeled scenario collections; formats follow source value |
-| Ingestion | Curated HTTPS downloads, Python/Sphinx parser, atomic file replacement | Owned source registration exists; service acquisition/jobs/worker/adapters remain planned |
-| Records | Frozen document/section/block/chunk records; schema 1 | Service v1 registration/response records exist; content/revision/location schemas remain planned |
+| Ingestion | Curated HTTPS downloads, Python/Sphinx parser, atomic file replacement | Owned sources plus persisted HTTPS/Python sync, Redis/Celery worker, immutable artifacts and recovery implemented; additional adapters planned |
+| Records | Frozen document/section/block/chunk records; schema 1 | Separate service registration/job/revision/document records implemented; chunks/expanded location types remain planned |
 | Retrieval | Local Sentence Transformers; SQLite exact product/version search | PostgreSQL/pgvector exact authorized search, initially unchanged encoder |
 | Answers | Direct pipeline, injectable generator, evidence budgets, trusted citations/status validation | Authorized API, SDK transport adapter, source authority/conflict presentation |
 | Identity | Baseline CLI has no authentication or public web service | Keycloak access-token verification, PostgreSQL memberships and scoped API implemented locally; public-reader/browser flows remain planned |
@@ -30,6 +30,8 @@ The illustrative E104/release-2.4 upload question in the handoff describes the i
 Read-only inspection on 2026-11-02 found 720/754 SQLite chunks for 3.12/3.13 and confirmed the preserved live report's four generated, structurally valid outcomes: two answered and two insufficient-evidence. Report SHA-256 remains `603e6f1498bb8f7d054c27eb906c8c668910800cf4c93d8454ebd9b503d9594c`; index SHA-256 remains `1c50c846cbcfc9e27e0dbe038a66915f7821a7aec58ba9da2510e613ae3ebb2d`. This inspection is not a new semantic evaluation.
 
 Stage 1 verification passed 191 combined tests, including 27 real-service cases; default offline pytest passed 164 with those 27 skipped. The preserved baseline unittest suite separately passed all 136. These new checks concern authentication/source ownership, not answer quality. The earlier live RAG sample has known `copy2` qualification and citation-placement limitations. `evidence-grounding-v2` remains checked offline with live improvement pending. Independent human review and held-out assessment remain open. See [progress](progress.md), [live review](../evals/generation-dev-review.md), and [v2 audit](../evals/grounding-v2-dev.md).
+
+Stage 2's post-review verification passed 255 tests, including actual PostgreSQL/Keycloak and Redis/Celery prefork-process cases; offline pytest passed 196 with 59 opt-in skips, and all 136 baseline unittests passed. The 2026-11-05 fixes commit delivery reservations before broker I/O, protect worker retry/newer publisher bookkeeping, preserve worker startup/shutdown exit status, and byte-bound new URLs while keeping stored records readable. No dependency or migration change was needed. The earlier production-path public-page fetch/parse and its saved-artifact/hash/anchor/code checks remain preserved; no new public page was downloaded for the fixes. Synthetic fault fixtures and controlled clock advancement are labeled separately. These behavior checks are not semantic usefulness, independent human review or production readiness. No frozen retrieval data/index/report was rebuilt or tuned.
 
 ## Public questions and required evidence
 
@@ -102,7 +104,7 @@ Validate official anchors/quotes and synthetic labels before freezing a new data
 
 Before a stage adds or replaces a dependency, record its exact version, delegated responsibility, remaining DocLens logic, official API evidence, alternatives, license/model terms, local resources, operational costs, and the actual compatibility checks. Pin the tested resolution in `uv.lock`; container images/extensions and identity-provider configuration need their own pinned versions. Add only what that stage needs. A docs review or transitive lock entry is not a tested service integration.
 
-The baseline lock versions (Beautiful Soup 4.15.0, Sentence Transformers 5.7.0, transformers 5.21.0, torch 2.14.1, LangGraph 1.2.19, LangSmith 0.14.16) remain unchanged. Stage 1 declares the optional service extra and uses Pydantic 2.14.2/HTTPX 0.28.1 directly. Exact tested new versions, package metadata licenses, pinned container digests and actual compatibility evidence are in [the Stage 1 inventory](stage1-workspaces.md#libraries-and-exact-local-versions). Markdown/Docling/worker/vector/SDK integrations remain future choices; a transitive package alone does not verify them. Stage 0 performed no install; Stage 1's subsequent installation changed no existing locked package version.
+The baseline lock versions (Beautiful Soup 4.15.0, Sentence Transformers 5.7.0, transformers 5.21.0, torch 2.14.1, LangGraph 1.2.19, LangSmith 0.14.16) remain unchanged. Stage 1's service extra uses Pydantic 2.14.2/HTTPX 0.28.1 directly. Stage 2 adds the optional worker extra: Celery 5.6.3/Billiard 4.2.4, Kombu 5.7.0/redis-py 8.1.0, digest-pinned Redis 8.8.0. Exact versions, licenses and actual APIs/compatibility checks are in [Stage 1](stage1-workspaces.md#libraries-and-exact-local-versions) and [Stage 2](stage2-ingestion.md#exact-dependencies-and-local-resources). Billiard 4.2.4 fixes the locally reproduced Celery 5.6/macOS spawn incompatibility. Markdown/Docling/vector/SDK remain future integrations. Neither service stage changed an earlier locked package version; a transitive package alone does not verify an integration.
 
 | Tool and first stage | Delegated responsibility | DocLens responsibility, reason, and tradeoff |
 | --- | --- | --- |
@@ -171,7 +173,7 @@ Use a direct application pipeline for expanded RAG. CPU-heavy parsing/embedding 
 | --- | --- | --- |
 | 0 — Product and migration plan | This plan, updated guidance/status/architecture | Reviewable corpus/acceptance matrix, library ownership decisions, preservation checks, clear Stage 1 contract; no app scaffolding |
 | 1 — Authenticated workspace/source ownership, complete locally | Optional API, PostgreSQL migrations, token verification, memberships, source register/list/read | Actual endpoint/DB allow/deny checks, restricted role and real Keycloak-issued service-account/JWKS verification; no RLS/browser/public-reader claim |
-| 2 — Recoverable ingestion | One registered HTTPS/Python-HTML source, Celery worker, raw snapshot, job progress/errors | Success, duplicate delivery, bounded retry, dispatch recovery, and interruption leave consistent staged/published records |
+| 2 — Recoverable ingestion, complete locally | Registered HTTPS/Python source sync, Celery/Redis worker, raw/normalized artifacts, scoped job/revision reads | Actual public-page success, real worker duplicate/lost-delivery/retry/interruption checks, transactional rollback and claim fencing; local limits documented |
 | 3 — Sources/formats, one unit at a time | Useful revision-pinned repository material/Markdown, then curated issue exports; PDF only for a valuable source | Inspect each raw/normalized pair, structure, locations, revision/access metadata and failure behavior; document deferrals rather than fabricate format requirements; no OCR claim |
 | 4 — Authorized retrieval | Local encoder + PostgreSQL/pgvector exact search | Scope before ranking, idempotent indexing, metadata/revision identity, real query inspection, no query-driven content/index writes |
 | 5 — Grounded answer API | Direct authorized retrieve → budget → SDK generate → validate → cite; explicit public-reader policy | Offline contracts and bounded new-dev live sample; correctness/support/citations/abstention/failures separately reviewed; public grants do not bypass private/admin authorization |
@@ -184,7 +186,7 @@ Basic tests, safe logs, configuration, and reviewed migrations start with their 
 
 ## Stage 1 acceptance contract
 
-The user explicitly requested and completed this unit on 2026-11-03. The flow/schema/library/verification decisions were explained before implementation. [Actual code, commands and results](stage1-workspaces.md) satisfy the local contract; the checks below remain the acceptance reference. Celery, pgvector, new parsers, generation and UI were not added. Stop here until the user requests Stage 2.
+The user explicitly requested and completed this unit on 2026-11-03. The flow/schema/library/verification decisions were explained before implementation. [Actual code, commands and results](stage1-workspaces.md) satisfy the local contract; the checks below remain the acceptance reference. Celery, pgvector, new parsers, generation and UI were not added in that unit. Stage 2 was subsequently requested and implemented separately.
 
 Implemented endpoints: `GET /api/v1/workspaces`, `POST`/`GET /api/v1/workspaces/{workspace_id}/sources`, and `GET /api/v1/workspaces/{workspace_id}/sources/{source_id}`. Registration persists a validated `https_html` source definition without fetching or enqueuing it. Pagination and responses stay scoped. No endpoint accepts a trusted owner/membership/tenant override from request JSON.
 
@@ -202,6 +204,12 @@ Migration `0001_workspace_sources` covers principals keyed by issuer/subject, wo
 | Safe failures and boundaries | Missing settings fail readably; no keys, bearer tokens, DSNs/passwords or raw provider bodies in API/logs. Registration performs no acquisition/model call. No ingestion/index/report mutation; new pytest/API integration tests plus relevant existing unittest checks pass |
 
 Show actual stage-specific run/test commands and authorized/denied responses at implementation time. Do not publish a pretend successful curl transcript in this plan. A small learning checkpoint for Stage 1: trace how an authenticated subject becomes an authorized workspace query, and explain why a signed token or a source ID alone is insufficient.
+
+## Stage 2 acceptance contract and result
+
+The 2026-11-04 request authorized one recoverable workflow, now implemented. [The guide](stage2-ingestion.md) records its actual states, library versions/terms, endpoints, commands, artifacts, rollback and fault tests. Acceptance requires durable authorized acceptance without broker availability; repeatable request identity; one active sync/source; verifiable raw/normalized provenance and exact code preservation; scoped job/revision/artifact reads; bounded acquisition/retries; duplicate/lost delivery recovery; expired-claim fencing; and no partial/failed replacement of ready content. Actual DB/IdP/broker/prefork-process checks and the public-page smoke check establish that local scope. Synthetic fault fixtures are distinct from public acquisition and from quality evaluation.
+
+Current ready-document publication is separate from vector/index publication and later public-read grants. The dispatcher must run; orphan files, storage cleanup/quotas, host/power-loss recovery, backup/restore and operational capacity remain open. Preserve the previous ready revision after processing failure; do not infer deletion. Stop here until the user's next Stage 3 unit request; no automatic adapter or retrieval expansion.
 
 ## Continuity and evaluation rules
 

@@ -15,7 +15,7 @@ Inspect the actual files relevant to the checkpoint before treating a task as co
 
 ## Purpose and collaboration style
 
-DocLens is evolving from a version-aware documentation RAG baseline into a version-aware, permission-aware engineering support and incident knowledge assistant. The service should combine product references, release notes, repository runbooks, and tickets with inspectable citations, access boundaries, version distinctions, conflicts, and evidence gaps. Stage 1 now implements local authenticated workspace/source registration/list/read, verified against PostgreSQL and real Keycloak-issued service-account tokens. It uses application-scoped SQL, not RLS. Expanded ingestion/retrieval/answers and the public visitor service remain planned. Public descriptions focus on purpose, capabilities, and honest status; keep learning goals in the roadmap, learning notes, and assistant guidance.
+DocLens is evolving from a version-aware documentation RAG baseline into a version-aware, permission-aware engineering support and incident knowledge assistant. The service should combine product references, release notes, repository runbooks, and tickets with inspectable citations, access boundaries, version distinctions, conflicts, and evidence gaps. Stages 1/2 implement authenticated workspace/source ownership and one recoverable Python-HTML sync, verified against PostgreSQL, real Keycloak-issued tokens, Redis/Celery prefork processes and a public-page fetch. It uses application-scoped SQL, not RLS. New adapters, expanded retrieval/answers and the public visitor remain planned. Public descriptions focus on purpose, capabilities, and honest status; keep learning goals in the roadmap, learning notes, and assistant guidance.
 
 The 2026-11-03 clarification adds two simultaneous goals: useful public answers to real engineering questions, and an inspectable engineering demonstration. Synthetic runbooks/tickets are optional labeled guided scenarios/test fixtures, not a required main knowledge base. Default public evidence must stay distinguishable from synthetic content; both paths execute the actual pipeline. Recommend the initial Python file-processing audience against the five questions in `docs/expanded-rag-plan.md`; it is not a user-selected cloud-native/OpenTelemetry/Kubernetes domain. Preserve the Python baseline whichever public collection is chosen. Choose formats for useful source material; PDF is conditional, not a feature checkbox.
 
@@ -27,7 +27,7 @@ Act as a senior applied-AI engineer and Python backend architect who teaches han
 - Answer conceptual questions plainly, then return to the current step without losing the checkpoint.
 - Do not implement whole milestones or generate large amounts of application code unless the user asks you to. Explicit requests to edit, fix, or set up files authorize that work.
 - Make reasonable recommendations without repeatedly asking for confirmation. Avoid extra tooling and infrastructure that the current step does not need.
-- Stop at a stage boundary. “Next”, “continue”, or an explicit next-stage request authorizes that stage. Stage 3 adapters and Stage 7 experiments are separate units, not one large implementation dump. The user explicitly authorized Stage 1 on 2026-11-03; it is implemented with its local verification recorded. Await the user's next-stage request before Stage 2; do not automatically start ingestion.
+- Stop at a stage boundary. “Next”, “continue”, or an explicit next-stage request authorizes that stage. Stage 3 adapters and Stage 7 experiments are separate units, not one large implementation dump. Stages 1/2 were explicitly authorized and implemented with local verification recorded. Await the next request before Stage 3's first useful source/format unit; do not automatically add all adapters or start retrieval/answers.
 - Do not automatically delegate to agents, commit, push, publish, or deploy. Preserve the valuable uncommitted graph/grounding work; do not reset or wholesale rewrite it.
 
 ## Technical direction
@@ -52,6 +52,7 @@ Act as a senior applied-AI engineer and Python backend architect who teaches han
 - Use public/synthetic demonstration content with the current free provider; do not send private/customer data. Label synthetic runbooks/tickets in content and metadata. A real private deployment requires a separate provider/privacy decision. No paid infrastructure, model downloads or provider calls merely for planning.
 - New tests use pytest while retaining unittest coverage; real PostgreSQL and later worker/broker integration checks must exercise the claims made. Basic tests/redacted logs/settings/migrations start with their feature; operations/recovery evidence is required before claiming production readiness. Documentation-only changes need no application test rerun.
 - For Stage 1, read `docs/stage1-workspaces.md`: optional `service` extra, generated ignored credentials, digest-pinned local PostgreSQL/Keycloak, migrations/operator bootstrap, and opt-in disposable-DB integration tests. Do not expose runtime DB credentials as tenant credentials, claim database row isolation, treat service-account verification as browser sign-in, or overwrite the preserved HTTP report. Editable-install `.egg-info` is generated metadata; preserve baseline source/data rather than restoring stale generated packaging files.
+- For the current ingestion boundary, read `docs/stage2-ingestion.md`: optional `service` + `worker` extras; verified Celery 5.6.3/Billiard 4.2.4 pin (newer Billiard broke macOS prefork); separate worker credentials; Redis Compose overlay; explicit dispatcher; bounded jobs/claims/fencing/immutable artifacts. Ready documents are not vector-index/public-reader publication. Real-process fault tests use synthetic acquisition and controlled expiry, separately from the actual public HTTPS smoke check. Preserve their reports and baseline artifacts; never flush unrelated Redis queues or kill user-owned processes.
 
 ## Maintain continuity
 
@@ -89,6 +90,13 @@ uv run --extra service python scripts/stage1_dev.py bootstrap
 uv run --extra service uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 uv run --extra service python scripts/stage1_dev.py request /api/v1/workspaces
 DOCLENS_RUN_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service python -m pytest tests -q
+uv sync --extra service --extra worker --group dev
+uv run --extra service --extra worker python scripts/stage2_dev.py prepare
+docker compose -f compose.stage1.yaml -f compose.stage2.yaml up -d
+uv run --extra service --extra worker python scripts/stage1_dev.py bootstrap
+uv run --extra service --extra worker python -m doclens.service.worker worker
+uv run --extra service --extra worker python -m doclens.service.worker dispatch
+DOCLENS_RUN_INTEGRATION=1 DOCLENS_RUN_WORKER_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service --extra worker python -m pytest tests -q
 ```
 
 To check manifest syntax:

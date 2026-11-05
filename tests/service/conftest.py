@@ -66,18 +66,21 @@ def real_services(dev):
     admin = create_engine(dev.database_url("doclens_dev_admin"), isolation_level="AUTOCOMMIT", hide_parameters=True)
     with admin.connect() as con:
         con.connection.driver_connection.execute(sql.SQL("CREATE DATABASE {} OWNER doclens_dev_admin").format(sql.Identifier(name)))
-    owner = runtime = None
+    owner = runtime = worker = None
     try:
         dev.provision_database(name)
         owner = create_engine(dev.database_url("doclens_owner", name), hide_parameters=True)
         runtime = create_engine(dev.database_url("doclens_app", name), hide_parameters=True, pool_size=1, max_overflow=0)
+        worker = create_engine(dev.database_url("doclens_worker", name), hide_parameters=True)
         workspaces = dev.seed(owner)  # Real issued tokens + real JWKS verification.
         settings = dev.settings().model_copy(update={
             "database_url": SecretStr(dev.database_url("doclens_app", name).render_as_string(hide_password=False))})
-        yield SimpleNamespace(owner=owner, runtime=runtime, workspaces=workspaces, settings=settings, dev=dev)
+        yield SimpleNamespace(owner=owner, runtime=runtime, worker=worker, workspaces=workspaces, settings=settings, dev=dev)
     finally:
         if runtime is not None:
             runtime.dispose()
+        if worker is not None:
+            worker.dispose()
         if owner is not None:
             owner.dispose()
         with admin.connect() as con:
@@ -97,3 +100,27 @@ def api(real_services):
 @pytest.fixture
 def headers(real_services):
     return lambda alias: {"Authorization": "Bearer " + real_services.dev.token(alias)}
+
+
+@pytest.fixture
+def ingestion_case(api, headers, real_services, tmp_path):
+    from sqlalchemy import update
+    from sqlalchemy.orm import sessionmaker
+    from doclens.service.ingestion_io import ArtifactStore
+    from doclens.service.models import IngestionJob
+    from uuid import UUID
+    source = {"name": "fixture-" + uuid4().hex, "product": "python", "version": "3.13",
+              "url": f"https://docs.python.org/3.13/library/fixture-{uuid4().hex}.html",
+              "source_terms_url": "https://docs.python.org/3.13/license.html"}
+    prefix = f"/api/v1/workspaces/{real_services.workspaces['atlas']}"
+    value = api.post(prefix + "/sources", headers=headers("atlas-owner"), json=source)
+    assert value.status_code == 201
+    source_id = value.json()["id"]
+    store = api.app.state.artifacts = ArtifactStore(tmp_path / "artifacts")
+    yield {"path": prefix + "/sources/" + source_id, "prefix": prefix, "source_id": source_id,
+           "source": value.json(), "store": store,
+           "sessions": sessionmaker(real_services.worker, expire_on_commit=False)}
+    with real_services.owner.begin() as con:
+        con.execute(update(IngestionJob).where(IngestionJob.source_id == UUID(source_id),
+                    IngestionJob.status.in_(("queued", "running", "retry_wait"))).values(
+                        status="failed", stage="failed", lease_token=None, lease_expires_at=None))

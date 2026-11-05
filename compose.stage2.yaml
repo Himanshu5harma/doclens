@@ -1,0 +1,19 @@
+# Extend the existing Compose project; keep its original PostgreSQL/IdP volumes.
+services:
+  redis:
+    image: redis:8.8.0-alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "127.0.0.1:16379:6379"
+    volumes:
+      - ./data/service/dev/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_data:/data
+    healthcheck:
+      # No authentication means NOAUTH, but confirms a responding process without
+      # putting the secret in a command, environment or healthcheck output.
+      test: ["CMD-SHELL", "redis-cli ping 2>&1 | grep -q NOAUTH"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  redis_data:

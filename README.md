@@ -4,7 +4,7 @@ A version-aware engineering knowledge assistant with inspectable source citation
 
 **Status: a working direct RAG baseline and an optional single-release LangGraph workflow.** The corpus has 20 official Python documentation pages across versions 3.12 and 3.13. `ask` retrieves version-scoped evidence, generates through an explicit OpenRouter free model, and validates answer structure/citations. A four-case live direct run produced two supported-question answers and two appropriate evidence-gap responses, with zero reported model cost. Assistant review found incomplete `copy2` preservation caveats and weak citation placement. The current v2 prompt/format policy addresses these in instructions and placement checks; live behavior under v2 remains unverified. The graph reuses that behavior with local node traces; its full answer path is verified offline, with real-index prompt inspection. Broader quality validation and independent human review remain open.
 
-**Expanded service: Stage 1 workspace/source ownership is implemented and locally verified.** A separate optional FastAPI service verifies real Keycloak-issued access tokens, checks current PostgreSQL membership, and registers/lists/reads owned source metadata. Owner/editor/viewer and cross-workspace boundaries were checked against the actual database under a restricted runtime role; RLS and browser sign-in are not implemented. Registration does not fetch/index content. The useful public reader, worker, expanded retrieval/answers, new adapters and visitor interface remain planned. See the [Stage 1 guide](docs/stage1-workspaces.md) and [expanded plan](docs/expanded-rag-plan.md). The existing RAG CLI remains available; there is no public web app yet.
+**Expanded service: authenticated source ownership and recoverable Python-HTML ingestion are implemented and locally verified.** A separate optional FastAPI service verifies real Keycloak access tokens and current PostgreSQL membership. Owner/editor can register a source and request a durable sync; a Redis/Celery worker saves verified raw/normalized artifacts with inspectable progress, bounded retries and interruption recovery. Authorized members can inspect jobs/revisions/artifacts. Real DB/IdP/broker/worker checks and one public-page sync passed; RLS, browser sign-in, public reader, new adapters and expanded retrieval/answers remain planned. See [Stage 1](docs/stage1-workspaces.md), [Stage 2](docs/stage2-ingestion.md) and the [expanded plan](docs/expanded-rag-plan.md). The existing RAG CLI remains available; there is no public web app yet.
 
 ## The problem
 
@@ -204,8 +204,8 @@ The graph prepares the same evidence/prompt and stops before generation when ins
 | --- | --- | --- |
 | 0: Plan | Product, corpus/acceptance matrix, library ownership, migration plan | Complete; documentation only |
 | 1: Workspace ownership | Authenticated API, PostgreSQL migrations, memberships, source registration | Implemented; real local Keycloak/PostgreSQL verified |
-| 2: Ingestion workflow | Persisted jobs, Celery/Redis, verifiable snapshots and recovery | Next, only when requested |
-| 3: Source/format units | Useful repository material/Markdown and issue exports; PDF when justified | Planned, one adapter unit at a time |
+| 2: Ingestion workflow | Persisted jobs, Celery/Redis, verifiable snapshots and recovery | Implemented; real public sync and local recovery checks |
+| 3: Source/format units | Useful repository material/Markdown and issue exports; PDF when justified | Next only when requested, one adapter unit at a time |
 | 4: Retrieval | Exact authorized PostgreSQL/pgvector search with local embeddings | Planned |
 | 5: Answers | Direct grounded answer API and bounded live evaluation | Planned |
 | 6: Lifecycle | Configuration-aware incremental sync, revision publication, deletion/revocation | Planned |
@@ -216,6 +216,8 @@ The graph prepares the same evidence/prompt and stops before generation when ins
 See [the roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [expanded plan](docs/expanded-rag-plan.md), and [evaluation rules](evals/README.md). Stage 1's installed versions and verification are recorded separately from future library candidates. Earlier baseline milestones remain in the roadmap as history.
 
 ## Run the local workspace/source service
+
+The commands below start the original ownership API. For sync, also start Redis, Celery and the dispatch/recovery loop using [the Stage 2 setup and inspection commands](docs/stage2-ingestion.md#run-and-inspect). Registration alone performs no acquisition. The current combined suite passes 255 tests when both integration flags/extras are selected, including actual broker/process recovery and the reviewed dispatch/startup/URL regressions. These behavior checks are separate from RAG answer quality.
 
 Requires Docker, Python 3.12+ and uv. From the repository root:
 
@@ -229,7 +231,7 @@ uv run --extra service uvicorn doclens.service.app:create_app --factory --host 1
 
 In another terminal, `uv run --extra service python scripts/stage1_dev.py request /api/v1/workspaces` obtains a real local token without printing it and shows authorized workspace metadata. The [complete guide](docs/stage1-workspaces.md#run-and-inspect) includes source registration, denied access, the example JSON, credential/storage boundaries and cleanup. These are local demonstration service accounts, not a finished human login flow. Loopback HTTP/Keycloak development mode is for local use.
 
-The full combined verification passed **191 tests** (plus 121 unittest subtests), including 27 real PostgreSQL/Keycloak cases. Default offline pytest passed 164 with those 27 integration cases skipped. The preserved unittest suite separately passed all 136. Use `DOCLENS_RUN_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service python -m pytest tests -q` after starting the local services; it creates/drops a separate disposable test database. Source/corpus/index/report preservation and quality limitations are recorded in [progress](docs/progress.md). These checks establish tested behavior, not production security or semantic answer quality.
+Stage 1's original run passed **191 tests**, including 27 real PostgreSQL/Keycloak cases; the post-review Stage 2 run passes **255** with both real-service flags/extras, or **196** offline with 59 opt-in cases skipped. All 136 original unittests pass separately. See [the current verification commands](docs/stage2-ingestion.md#verification-and-remaining-boundary); integration creates/drops a separate disposable PostgreSQL database. Source/corpus/index/report preservation and quality limits are recorded in [progress](docs/progress.md). These checks establish stated behavior, not production security or semantic answer quality.
 
 ## Continuing in a new chat
 

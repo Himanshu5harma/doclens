@@ -1,6 +1,7 @@
 """Actual API + PostgreSQL + Keycloak checks; no fake identity dependency."""
 
 from uuid import uuid4
+import random
 
 import pytest
 from sqlalchemy import delete, func, insert, select, text
@@ -166,5 +167,47 @@ def test_invalid_registration_redacts_rejected_input(url, api, headers, real_ser
 
 def test_schema_is_migrated_and_no_rls_claim_is_made(real_services):
     with real_services.owner.connect() as con:
-        assert con.scalar(text("SELECT version_num FROM doclens_service.alembic_version")) == "0001_workspace_sources"
+        assert con.scalar(text("SELECT version_num FROM doclens_service.alembic_version")) == "0002_ingestion"
         assert con.scalar(text("SELECT count(*) FROM pg_tables WHERE schemaname='doclens_service' AND rowsecurity")) == 0
+
+
+def test_multibyte_url_beyond_byte_budget_is_422_not_database_failure(api, headers, real_services):
+    rng = random.Random(8923)
+    url = "https://docs.python.org/3.13/library/" + "".join(chr(rng.randrange(0x4E00, 0x9FFF)) for _ in range(1950)) + ".html"
+    assert len(url) < 2048 < len(url.encode())
+    response = api.post(sources_path(real_services, "atlas"), headers=headers("atlas-owner"), json={**body(), "url": url})
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Invalid request."}
+    # An ordinary registration still works in the next transaction/session.
+    assert api.post(sources_path(real_services, "atlas"), headers=headers("atlas-owner"), json=body()).status_code == 201
+
+
+def test_utf8_url_at_byte_budget_persists_with_maximum_scope_strings(api, headers, real_services):
+    prefix, suffix = "https://docs.example.test/", ".html"
+    url = prefix + "\u00e9" * ((2048 - len(prefix) - len(suffix)) // 2)
+    url += "x" * (2048 - len(url.encode()) - len(suffix)) + suffix
+    assert len(url.encode()) == 2048
+    payload = {**body(), "product": "p" * 64, "version": "v" * 64, "url": url}
+    response = api.post(sources_path(real_services, "atlas"), headers=headers("atlas-owner"), json=payload)
+    assert response.status_code == 201
+    with real_services.runtime.connect() as con:
+        assert con.scalar(select(func.octet_length(RegisteredSource.url)).where(
+            RegisteredSource.id == response.json()["id"])) == 2048
+
+
+def test_previously_stored_compressible_unicode_source_remains_readable(api, headers, real_services):
+    path = sources_path(real_services, "atlas")
+    original = api.post(path, headers=headers("atlas-owner"), json=body()).json()
+    url = "https://docs.python.org/3.13/library/" + "\u00e9" * 1500 + ".html"
+    assert len(url) < 2048 < len(url.encode())
+    identifier = uuid4()
+    # Simulate a row accepted before the input fix; PostgreSQL compresses this
+    # repeated URL enough for the old index, unlike the noncompressible case.
+    with real_services.owner.begin() as con:
+        con.execute(insert(RegisteredSource).values(id=identifier, workspace_id=real_services.workspaces["atlas"],
+            created_by=original["created_by"], name="Legacy synthetic fixture", connector_kind="https_html",
+            product="python", version="3.13", document_type="reference", url=url,
+            source_terms_url="https://docs.python.org/3.13/license.html"))
+    response = api.get(path + "/" + str(identifier), headers=headers("atlas-viewer"))
+    assert response.status_code == 200 and response.json()["url"] == url
+    assert any(source["id"] == str(identifier) for source in api.get(path, headers=headers("atlas-viewer")).json())

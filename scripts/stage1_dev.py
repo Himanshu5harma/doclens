@@ -51,6 +51,10 @@ def prepare():
                  ("doclens_dev_admin", "doclens_owner", "doclens_app", *ALIASES)}
         private_write(path, json.dumps(creds, indent=2) + "\n")
     creds = credentials()
+    # Upgrade existing local setup without rotating its database/IdP credentials.
+    if "doclens_worker" not in creds:
+        creds["doclens_worker"] = secrets.token_hex(24)
+        private_write(path, json.dumps(creds, indent=2) + "\n")
     private_write(DEV / "postgres-admin.txt", creds["doclens_dev_admin"] + "\n")
     private_write(ROOT / ".env.stage1.idp.local", "".join(
         f"{alias.upper().replace('-', '_')}_SECRET={creds[alias]}\n" for alias in ALIASES))
@@ -129,7 +133,7 @@ def provision_database(database="doclens_service"):
     engine = create_engine(database_url("doclens_dev_admin", database), hide_parameters=True)
     try:
         with engine.begin() as con:
-            for role in ("doclens_owner", "doclens_app"):
+            for role in ("doclens_owner", "doclens_app", "doclens_worker"):
                 if not con.scalar(text("SELECT 1 FROM pg_roles WHERE rolname = :role"), {"role": role}):
                     # psycopg quotes both identifier and password as SQL values.
                     raw = con.connection.driver_connection
@@ -137,7 +141,7 @@ def provision_database(database="doclens_service"):
                                 .format(sql.Identifier(role), sql.Literal(credentials()[role])))
             raw = con.connection.driver_connection
             raw.execute(sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(database)))
-            raw.execute(sql.SQL("GRANT CONNECT ON DATABASE {} TO doclens_owner, doclens_app")
+            raw.execute(sql.SQL("GRANT CONNECT ON DATABASE {} TO doclens_owner, doclens_app, doclens_worker")
                         .format(sql.Identifier(database)))
             con.execute(text("REVOKE CREATE ON SCHEMA public FROM PUBLIC"))
             con.execute(text("CREATE SCHEMA IF NOT EXISTS doclens_service AUTHORIZATION doclens_owner"))

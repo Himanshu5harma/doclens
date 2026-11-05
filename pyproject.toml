@@ -23,6 +23,12 @@ graph = [
     "langgraph>=1.2,<2",
     "langsmith>=0.4,<1",
 ]
+worker = [
+    # Celery 5.6's prefork initializer is incompatible with Billiard 4.3's
+    # macOS spawn default (celery/celery#10683); verified with real workers.
+    "billiard==4.2.4",
+    "celery[redis]==5.6.3",
+]
 service = [
     "alembic>=1.16,<2",
     "fastapi>=0.118,<1",

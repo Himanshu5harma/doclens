@@ -2,6 +2,8 @@
 
 Implemented and locally verified on 2026-11-03. This adds a small optional FastAPI service alongside the unchanged RAG CLI/SQLite baseline. It registers and reads source metadata; it does not fetch, parse, index or generate answers. The public reader, browser sign-in, new adapters and worker are later stages.
 
+This guide records the Stage 1 boundary/results. Stage 2 was subsequently requested and implemented on 2026-11-04: [its guide](stage2-ingestion.md) covers source sync, worker/broker setup, the migration/worker role, current combined test commands/results and limits. Registration itself still performs no acquisition. The earlier Stage 1 HTTP report is preserved.
+
 ## Request flow
 
 ```mermaid
@@ -54,6 +56,8 @@ The cluster administrator provisions roles/schema. Alembic runs as `doclens_owne
 Missing/invalid/expired/wrong-issuer/audience/type tokens return 401 with a Bearer challenge. A member with insufficient write role gets 403. Unknown/inaccessible workspace/source lookups both use 404 with the same message. Duplicate registration returns 409 and rolls back. Invalid body/query/path data returns a fixed 422 without echoing rejected input. Database and identity-provider connection failures return redacted 503 responses. Registration rejects caller-supplied scope/creator/role fields and credential-bearing/query/fragment URLs.
 
 Source registration does not verify that a URL exists, that its license permits a particular use, or that it can be parsed. It does not resolve DNS or fetch it. The initial connector is `https_html`; metadata distinguishes purpose from format. Stage 2 must enforce allowed network destinations/redirects, response limits and parser/provenance checks when acquisition begins. No index/corpus mutation occurs while asking this service to register/list metadata.
+
+The 2026-11-05 review fix adds a 2,048-UTF-8-byte budget to newly registered URL/terms fields, alongside the existing character limits. This prevents a multibyte URL from passing request validation and then overflowing the composite unique index. Oversized input returns 422; exact byte-boundary inserts were tested against real PostgreSQL with maximum-length product/version fields. `SourceRead` shares the original metadata shape without adopting the new input-only byte rule, so older stored records remain inspectable. Source identities, migrations and baseline data are unchanged.
 
 ## Libraries and exact local versions
 

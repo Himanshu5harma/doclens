@@ -1,4 +1,4 @@
-"""Authenticated source ownership. No ingestion, retrieval or model imports."""
+"""Authenticated source ownership and job inspection; no request-time fetching."""
 
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -87,6 +87,8 @@ def create_app(settings: ServiceSettings | None = None, *, verifier: TokenVerifi
     app = FastAPI(title="DocLens source service", version="1", lifespan=lifespan)
     app.state.sessions = sessionmaker(engine, expire_on_commit=False)
     app.state.verifier = verifier or TokenVerifier(settings)
+    from doclens.service.ingestion_io import ArtifactStore
+    app.state.artifacts = ArtifactStore(settings.artifact_root)
 
     @app.middleware("http")
     async def safe_request_summary(request, call_next):
@@ -151,4 +153,6 @@ def create_app(settings: ServiceSettings | None = None, *, verifier: TokenVerifi
             raise HTTPException(409, "Source registration conflicts with existing data.") from None
         return source
 
+    from doclens.service.ingestion_api import router as ingestion_router
+    app.include_router(ingestion_router)
     return app

@@ -9,7 +9,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class SourceCreate(BaseModel):
+class SourceFields(BaseModel):
+    """Shared metadata shape, including previously stored valid records."""
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     name: str = Field(min_length=1, max_length=120)
@@ -51,6 +52,17 @@ class SourceCreate(BaseModel):
         return self
 
 
+class SourceCreate(SourceFields):
+    @field_validator("url", "source_terms_url")
+    @classmethod
+    def bounded_url_bytes(cls, value: str) -> str:
+        # PostgreSQL's unique URL index has a byte budget, not a character budget.
+        # 2 KiB leaves room for workspace/product/version and tuple overhead.
+        if len(value.encode("utf-8")) > 2048:
+            raise ValueError("New source URLs must be at most 2048 UTF-8 bytes.")
+        return value
+
+
 class WorkspaceRead(BaseModel):
     id: UUID
     slug: str
@@ -58,7 +70,7 @@ class WorkspaceRead(BaseModel):
     role: Literal["owner", "editor", "viewer"]
 
 
-class SourceRead(SourceCreate):
+class SourceRead(SourceFields):
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     schema_version: Literal["doclens-service-v1"] = "doclens-service-v1"
@@ -66,3 +78,56 @@ class SourceRead(SourceCreate):
     workspace_id: UUID
     created_by: UUID
     created_at: datetime
+
+
+class SyncCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    request_key: UUID
+
+
+class JobRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    schema_version: Literal["doclens-ingestion-job-v1"] = "doclens-ingestion-job-v1"
+    id: UUID
+    workspace_id: UUID
+    source_id: UUID
+    requested_by: UUID
+    request_key: UUID
+    status: Literal["queued", "running", "retry_wait", "succeeded", "failed"]
+    stage: Literal["queued", "fetching", "parsing", "publishing", "complete", "failed"]
+    attempts: int
+    max_attempts: Literal[3] = 3
+    available_at: datetime
+    error_code: str | None
+    error_message: str | None
+    created_at: datetime
+    updated_at: datetime
+    revision_id: UUID | None = None
+    delivery_attempts: int = 0
+    max_delivery_attempts: Literal[20] = 20
+    next_dispatch_at: datetime | None = None
+    dispatch_error_code: str | None = None
+    dispatch_error_message: str | None = None
+
+
+class RevisionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    schema_version: Literal["doclens-source-revision-v1"] = "doclens-source-revision-v1"
+    id: UUID
+    job_id: UUID
+    source_id: UUID
+    workspace_id: UUID
+    source_snapshot: dict
+    parser_config: dict
+    final_url: str
+    fetched_at: datetime
+    raw_sha256: str
+    parsed_sha256: str
+    raw_size: int
+    parsed_size: int
+    title: str
+    section_count: int
+    block_count: int
+    code_count: int
+    raw_artifact_url: str = ""
+    parsed_artifact_url: str = ""
