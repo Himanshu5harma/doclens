@@ -9,7 +9,8 @@ from sqlalchemy.exc import IntegrityError
 
 from doclens.service.app import AccessDep, SessionDep
 from doclens.service.ingestion import source_snapshot
-from doclens.service.ingestion_io import IngestionError, validate_source
+from doclens.service.ingestion_io import IngestionError
+from doclens.service.source_adapters import validate_source
 from doclens.service.models import DispatchIntent, IngestionJob, RegisteredSource, SourcePublication, SourceRevision
 from doclens.service.schemas import JobRead, RevisionRead, SyncCreate
 

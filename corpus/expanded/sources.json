@@ -1,0 +1,32 @@
+{
+  "schema_version": "doclens-service-source-catalog-v1",
+  "sources": [
+    {
+      "catalog_id": "cpython-3.13.0-tempfile-tests",
+      "collection_key": "python-file-processing",
+      "origin": "public_repository",
+      "authority": "official_test_code",
+      "synthetic": false,
+      "access": "workspace_membership",
+      "source_release": "3.13.0",
+      "repository": "python/cpython",
+      "commit": "60403a5409ff2c3f3b07dd2ca91a7a3e096839c7",
+      "path": "Lib/test/test_tempfile.py",
+      "selected_symbols": ["TestNamedTemporaryFile"],
+      "tests_executed": false,
+      "acquisition_policy": "github-curated-raw-sha256-v1",
+      "raw_url": "https://raw.githubusercontent.com/python/cpython/60403a5409ff2c3f3b07dd2ca91a7a3e096839c7/Lib/test/test_tempfile.py",
+      "expected_raw_sha256": "08f33f84addf1cb7a99747857d093246973a49f238a63eeb64fe395205bd2c36",
+      "expected_git_blob_sha1": "a5e182cef23dc54f534fe04dcc2aafcf0e35fe6a",
+      "registration": {
+        "name": "CPython 3.13.0 NamedTemporaryFile tests",
+        "connector_kind": "github_file",
+        "product": "python",
+        "version": "3.13",
+        "document_type": "test_code",
+        "url": "https://github.com/python/cpython/blob/60403a5409ff2c3f3b07dd2ca91a7a3e096839c7/Lib/test/test_tempfile.py",
+        "source_terms_url": "https://github.com/python/cpython/blob/60403a5409ff2c3f3b07dd2ca91a7a3e096839c7/LICENSE"
+      }
+    }
+  ]
+}

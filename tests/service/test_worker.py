@@ -107,6 +107,27 @@ def make_due(real, job, *, expire=False):
                     .values(next_dispatch_at=utcnow() - timedelta(seconds=1)))
 
 
+def test_real_worker_routes_repository_job_and_preserves_v2_locations(api, headers, ingestion_case, real_services, worker_harness):
+    from doclens.service.repository import COMMIT, REGISTRATION, SOURCE_URL
+    case, harness = ingestion_case, worker_harness
+    # The disposable test DB has one curated repo registration in this workspace.
+    with real_services.owner.begin() as con:
+        con.execute(update(RegisteredSource).where(RegisteredSource.id == UUID(case["source_id"]))
+                    .values(**{**REGISTRATION, "name": "Synthetic repository worker fixture"}))
+    job = enqueue(api, headers, case)
+    process = harness.start()
+    assert dispatch_once(case["sessions"], sender(harness.app))["sent"] == 1
+    wait_for(lambda: value(case, job).status == "succeeded")
+    revision = api.get(case["path"] + "/revision", headers=headers("atlas-viewer")).json()
+    parsed = api.get(revision["parsed_artifact_url"], headers=headers("atlas-viewer")).json()
+    assert parsed["schema_version"] == "doclens-service-document-v2"
+    assert parsed["source"]["synthetic"] is True
+    block = parsed["document"]["sections"][0]["blocks"][0]
+    assert block["url"] == SOURCE_URL + "#L2-L4" and block["location"]["commit"] == COMMIT
+    harness.stop(process)
+    assert process.returncode == 0
+
+
 def rename(real, case, prefix):
     with real.owner.begin() as con:
         con.execute(update(RegisteredSource).where(RegisteredSource.id == UUID(case["source_id"]))

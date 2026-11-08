@@ -8,8 +8,8 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 from sqlalchemy import and_, or_, select
 from sqlalchemy.dialects.postgresql import insert
 
-from doclens.parse import parse_html
-from doclens.service.ingestion_io import ArtifactStore, ERRORS, IngestionError, POLICY, fetch_python
+from doclens.service.ingestion_io import ArtifactStore, ERRORS, IngestionError
+from doclens.service.source_adapters import adapter_for, normalized_source, acquisition_metadata
 from doclens.service.models import (DispatchIntent, IngestionJob, Membership, RegisteredSource,
                                     SourcePublication, SourceRevision)
 
@@ -116,26 +116,29 @@ def publish_revision(sessions, claim, revision):
     return True
 
 
-def run_job(sessions, store: ArtifactStore, job_id: UUID, *, fetcher=fetch_python,
-            parser=parse_html, lease_seconds=120):
+def run_job(sessions, store: ArtifactStore, job_id: UUID, *, fetcher=None,
+            parser=None, lease_seconds=120):
     claim = claim_job(sessions, job_id, lease_seconds=lease_seconds)
     if claim is None:
         return "ignored"
     try:
-        snapshot = fetcher(claim.source)
+        adapter = adapter_for(claim.source)
+        source = normalized_source(claim.source, adapter)
+        snapshot = (fetcher or adapter.fetch)(source)
         prefix = f"{claim.source['workspace_id']}/{claim.source['id']}/{claim.job_id}/{claim.token}"
         raw_key, raw_hash = store.put(prefix, snapshot.content, "raw")
         progress(sessions, claim, "parsing")
         try:
-            document = parser(snapshot.content, source_url=claim.source["url"])
+            document = (parser or adapter.parse)(snapshot.content, source_url=source["url"])
         except (ValueError, TypeError, KeyError):
             raise IngestionError("parse_error") from None
         revision_id = uuid5(NAMESPACE_URL, f"doclens-service-v1/revision/{claim.job_id}")
         normalized = {
-            "schema_version": "doclens-service-document-v1", "processing_policy": POLICY,
-            "revision_id": str(revision_id), "source": claim.source,
+            "schema_version": adapter.document_schema, "processing_policy": adapter.policy,
+            "revision_id": str(revision_id), "source": source,
             "provenance": {"final_url": snapshot.final_url, "fetched_at": snapshot.fetched_at.isoformat(),
-                           "raw_sha256": raw_hash, "size_bytes": len(snapshot.content)},
+                           "raw_sha256": raw_hash, "size_bytes": len(snapshot.content),
+                           **acquisition_metadata(snapshot.content, adapter)},
             "document": {key: document[key] for key in ("parser", "title", "sections")},
         }
         encoded = (json.dumps(normalized, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
@@ -147,8 +150,8 @@ def run_job(sessions, store: ArtifactStore, job_id: UUID, *, fetcher=fetch_pytho
         blocks = [block for section in document["sections"] for block in section["blocks"]]
         revision = SourceRevision(
             id=revision_id, job_id=claim.job_id, workspace_id=UUID(claim.source["workspace_id"]),
-            source_id=UUID(claim.source["id"]), source_snapshot=claim.source,
-            parser_config={**document["parser"], "processing_policy": POLICY},
+            source_id=UUID(claim.source["id"]), source_snapshot=source,
+            parser_config={**document["parser"], "processing_policy": adapter.policy},
             final_url=snapshot.final_url, fetched_at=snapshot.fetched_at,
             raw_sha256=raw_hash, parsed_sha256=parsed_hash, raw_size=len(snapshot.content),
             parsed_size=len(encoded), raw_key=raw_key, parsed_key=parsed_key,

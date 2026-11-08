@@ -15,9 +15,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 from doclens.service.ingestion import dispatch_once, run_job
-from doclens.service.ingestion_io import ArtifactStore, fetch_python
+from doclens.service.ingestion_io import ArtifactStore
 from doclens.service.settings import WorkerSettings
-from doclens.parse import parse_html
 
 logger = logging.getLogger("doclens.worker")
 TASK_NAME = "doclens.ingest_source"
@@ -29,7 +28,7 @@ def database_engine(settings):
             "options": "-c statement_timeout=10000 -c lock_timeout=5000"})
 
 
-def create_worker(settings: WorkerSettings, *, fetcher=fetch_python, parser=parse_html):
+def create_worker(settings: WorkerSettings, *, fetcher=None, parser=None):
     app = Celery("doclens", broker=settings.broker_url.get_secret_value(), set_as_current=False)
     app.conf.update(
         task_default_queue=settings.queue, task_serializer="json", accept_content=["json"],

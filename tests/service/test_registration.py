@@ -167,7 +167,7 @@ def test_invalid_registration_redacts_rejected_input(url, api, headers, real_ser
 
 def test_schema_is_migrated_and_no_rls_claim_is_made(real_services):
     with real_services.owner.connect() as con:
-        assert con.scalar(text("SELECT version_num FROM doclens_service.alembic_version")) == "0002_ingestion"
+        assert con.scalar(text("SELECT version_num FROM doclens_service.alembic_version")) == "0003_repository_source"
         assert con.scalar(text("SELECT count(*) FROM pg_tables WHERE schemaname='doclens_service' AND rowsecurity")) == 0
 
 

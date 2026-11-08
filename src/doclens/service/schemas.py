@@ -14,10 +14,10 @@ class SourceFields(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     name: str = Field(min_length=1, max_length=120)
-    connector_kind: Literal["https_html"] = "https_html"
+    connector_kind: Literal["https_html", "github_file"] = "https_html"
     product: str = Field(pattern=r"^[a-z][a-z0-9._-]{0,63}$")
     version: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$")
-    document_type: Literal["reference", "release_notes"] = "reference"
+    document_type: Literal["reference", "release_notes", "test_code"] = "reference"
     url: str = Field(min_length=1, max_length=2048)
     source_terms_url: str = Field(min_length=1, max_length=2048)
 
@@ -53,6 +53,19 @@ class SourceFields(BaseModel):
 
 
 class SourceCreate(SourceFields):
+    @model_validator(mode="after")
+    def curated_repository(self):
+        if self.connector_kind == "github_file":
+            from doclens.service.ingestion_io import IngestionError
+            from doclens.service.repository import validate_repository_source
+            try:
+                validate_repository_source(self.model_dump())
+            except IngestionError:
+                raise ValueError("Use the reviewed pinned repository registration from the source catalog.") from None
+        elif self.document_type == "test_code":
+            raise ValueError("Test code requires the curated repository connector.")
+        return self
+
     @field_validator("url", "source_terms_url")
     @classmethod
     def bounded_url_bytes(cls, value: str) -> str:
