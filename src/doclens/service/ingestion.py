@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from doclens.service.ingestion_io import ArtifactStore, ERRORS, IngestionError
 from doclens.service.source_adapters import adapter_for, normalized_source, acquisition_metadata
+from doclens.service.issue_export import DEFAULT_EXPORT_ROOT
 from doclens.service.models import (DispatchIntent, IngestionJob, Membership, RegisteredSource,
                                     SourcePublication, SourceRevision)
 
@@ -117,14 +118,14 @@ def publish_revision(sessions, claim, revision):
 
 
 def run_job(sessions, store: ArtifactStore, job_id: UUID, *, fetcher=None,
-            parser=None, lease_seconds=120):
+            parser=None, lease_seconds=120, export_root=DEFAULT_EXPORT_ROOT):
     claim = claim_job(sessions, job_id, lease_seconds=lease_seconds)
     if claim is None:
         return "ignored"
     try:
-        adapter = adapter_for(claim.source)
-        source = normalized_source(claim.source, adapter)
-        snapshot = (fetcher or adapter.fetch)(source)
+        adapter = adapter_for(claim.source, export_root=export_root)
+        snapshot = (fetcher or adapter.fetch)(claim.source)
+        source = normalized_source(claim.source, adapter, snapshot.content)
         prefix = f"{claim.source['workspace_id']}/{claim.source['id']}/{claim.job_id}/{claim.token}"
         raw_key, raw_hash = store.put(prefix, snapshot.content, "raw")
         progress(sessions, claim, "parsing")

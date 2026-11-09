@@ -128,6 +128,27 @@ def test_real_worker_routes_repository_job_and_preserves_v2_locations(api, heade
     assert process.returncode == 0
 
 
+def test_real_worker_ingests_reviewed_frozen_issue_export(api, headers, ingestion_case, real_services, worker_harness):
+    from doclens.service.issue_export import CURATION_PATH, REGISTRATION, SOURCE_URL
+    from doclens.service.ingestion_io import ArtifactStore
+    case, harness = ingestion_case, worker_harness
+    with real_services.owner.begin() as con:
+        con.execute(update(RegisteredSource).where(RegisteredSource.id == UUID(case["source_id"])).values(**REGISTRATION))
+    content = (Path(__file__).resolve().parents[2] / CURATION_PATH).read_bytes()
+    ArtifactStore(harness.settings.artifact_root.parent / "issue-exports").put("reviewed", content, "raw")
+    job = enqueue(api, headers, case)
+    process = harness.start()
+    assert dispatch_once(case["sessions"], sender(harness.app))["sent"] == 1
+    wait_for(lambda: value(case, job).status == "succeeded")
+    revision = api.get(case["path"] + "/revision", headers=headers("atlas-viewer")).json()
+    record = api.get(revision["parsed_artifact_url"], headers=headers("atlas-viewer")).json()
+    assert record["schema_version"] == "doclens-service-document-v3" and record["source"]["version"] == "3.8"
+    assert record["source"]["synthetic"] is False and record["source"]["content_mode"] == "curator_summaries"
+    assert record["document"]["sections"][2]["url"] == SOURCE_URL + "#issuecomment-1093914527"
+    harness.stop(process)
+    assert process.returncode == 0
+
+
 def rename(real, case, prefix):
     with real.owner.begin() as con:
         con.execute(update(RegisteredSource).where(RegisteredSource.id == UUID(case["source_id"]))

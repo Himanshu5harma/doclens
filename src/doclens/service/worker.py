@@ -55,7 +55,8 @@ def create_worker(settings: WorkerSettings, *, fetcher=None, parser=None):
             identifier = UUID(job_id)
             engine = database_engine(settings)
             outcome = run_job(sessionmaker(engine, expire_on_commit=False), ArtifactStore(settings.artifact_root),
-                identifier, fetcher=fetcher, parser=parser, lease_seconds=settings.lease_seconds)
+                identifier, fetcher=fetcher, parser=parser, lease_seconds=settings.lease_seconds,
+                export_root=settings.issue_export_root or settings.artifact_root.parent / "issue-exports")
             logger.warning("ingestion job=%s outcome=%s", identifier, outcome)
         except Exception:
             # DB downtime leaves durable state for bounded dispatch/lease recovery.

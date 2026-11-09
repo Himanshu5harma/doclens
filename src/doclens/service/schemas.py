@@ -14,10 +14,10 @@ class SourceFields(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     name: str = Field(min_length=1, max_length=120)
-    connector_kind: Literal["https_html", "github_file"] = "https_html"
+    connector_kind: Literal["https_html", "github_file", "issue_export"] = "https_html"
     product: str = Field(pattern=r"^[a-z][a-z0-9._-]{0,63}$")
     version: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$")
-    document_type: Literal["reference", "release_notes", "test_code"] = "reference"
+    document_type: Literal["reference", "release_notes", "test_code", "issue_report"] = "reference"
     url: str = Field(min_length=1, max_length=2048)
     source_terms_url: str = Field(min_length=1, max_length=2048)
 
@@ -62,8 +62,15 @@ class SourceCreate(SourceFields):
                 validate_repository_source(self.model_dump())
             except IngestionError:
                 raise ValueError("Use the reviewed pinned repository registration from the source catalog.") from None
-        elif self.document_type == "test_code":
-            raise ValueError("Test code requires the curated repository connector.")
+        elif self.connector_kind == "issue_export":
+            from doclens.service.ingestion_io import IngestionError
+            from doclens.service.issue_export import validate_issue_source
+            try:
+                validate_issue_source(self.model_dump())
+            except IngestionError:
+                raise ValueError("Use the reviewed historical issue registration from the catalog.") from None
+        elif self.document_type in ("test_code", "issue_report"):
+            raise ValueError("This document purpose requires its curated connector.")
         return self
 
     @field_validator("url", "source_terms_url")

@@ -1,0 +1,90 @@
+{
+  "schema_version": "doclens-curated-issue-export-v1",
+  "repository": "python/cpython",
+  "issue_number": 88221,
+  "title": "NamedTemporaryFile opened twice on Windows",
+  "issue_state": "open",
+  "closed_at": null,
+  "product": "python",
+  "version": "3.8",
+  "reported_versions": [
+    "3.8"
+  ],
+  "applicability": "historical_context_only",
+  "observed_at": "2026-11-09T13:10:14.079403+00:00",
+  "synthetic": false,
+  "content_mode": "curator_summaries",
+  "curator": "DocLens assistant-authored curation",
+  "independent_review": false,
+  "source_terms_url": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+  "repository_terms_url": "https://github.com/python/cpython/blob/60403a5409ff2c3f3b07dd2ca91a7a3e096839c7/LICENSE",
+  "terms_note": "Reviewed GitHub content/contribution terms and the pinned repository license; migrated comment rights are not assumed to be a blanket permission for all quoted/attached material. This export stores attributed curator summaries and factual metadata, with links and hashes; it does not republish full upstream bodies or attachments.",
+  "selection_note": "Issue overview and all three observed comments selected for the delete flag distinction. This is an explicitly frozen curation, not a live or guaranteed complete future thread. Comment timestamps were not supplied by the connected reader; edit chronology remains unknown.",
+  "upstream_hash_origin": "SHA-256 of the connected reader body string encoded as UTF-8; not a raw HTTP response hash",
+  "entries": [
+    {
+      "kind": "issue",
+      "comment_id": null,
+      "upstream_author": "559e26c8-6e49-4373-b6ba-a0229f62f8ab",
+      "created_at": "2021-05-06T10:47:42Z",
+      "updated_at": "2022-04-10T14:40:29Z",
+      "timestamp_status": "supplied",
+      "upstream_body_sha256": "36adf1de825bae1357fa5452a3ae109df3b7e0b8eb291cee33be4839a96fa62a",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "This historical documentation discussion was migrated from BPO 44055. The original tracker metadata lists Python 3.8. Its state at this observation is open; that state alone says nothing about fixes or current Python 3.13 behavior.",
+          "authorship": "curator_summary"
+        }
+      ]
+    },
+    {
+      "kind": "comment",
+      "comment_id": 1093914525,
+      "upstream_author": "559e26c8-6e49-4373-b6ba-a0229f62f8ab",
+      "created_at": null,
+      "updated_at": null,
+      "timestamp_status": "not_supplied",
+      "upstream_body_sha256": "3e7a3dd9c87afe08646054e56885e1127aea56851f343ca707ceb2163ee13846",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "The reporter described reopening a named temporary file on Windows while using delete=False, and asked how that observation related to older documentation. This is an attributed report rather than a test reproduced by DocLens.",
+          "authorship": "curator_summary"
+        }
+      ]
+    },
+    {
+      "kind": "comment",
+      "comment_id": 1093914527,
+      "upstream_author": "eryksun",
+      "created_at": null,
+      "updated_at": null,
+      "timestamp_status": "not_supplied",
+      "upstream_body_sha256": "08b1d4d16db987d70f3e66ebd54f79062ccbdb301d2ee47618001e9befef2fe8",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "eryksun distinguished delete=False from delete=True and explained the role of delete sharing and O_TEMPORARY in the Windows behavior discussed at the time. Treat this as historical technical commentary, not a guarantee for later Python releases.",
+          "authorship": "curator_summary"
+        }
+      ]
+    },
+    {
+      "kind": "comment",
+      "comment_id": 1093914529,
+      "upstream_author": "559e26c8-6e49-4373-b6ba-a0229f62f8ab",
+      "created_at": null,
+      "updated_at": null,
+      "timestamp_status": "not_supplied",
+      "upstream_body_sha256": "a3163d927af2dfabb5afbf8c186d536acecd6dbb2955e77c947e0ecf19b1b821",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "The reporter acknowledged the distinction and proposed clearer documentation wording. A suggested wording change does not establish that a change shipped, was backported, or resolves every Windows reopening case.",
+          "authorship": "curator_summary"
+        }
+      ]
+    }
+  ]
+}

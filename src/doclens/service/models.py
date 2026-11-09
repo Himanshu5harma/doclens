@@ -47,8 +47,8 @@ class RegisteredSource(Base):
     __table_args__ = (
         UniqueConstraint("workspace_id", "url", "product", "version", name="uq_source_identity"),
         UniqueConstraint("id", "workspace_id", name="uq_source_scope"),
-        CheckConstraint("connector_kind IN ('https_html', 'github_file')", name="ck_source_connector"),
-        CheckConstraint("document_type IN ('reference', 'release_notes', 'test_code')", name="ck_source_purpose"),
+        CheckConstraint("connector_kind IN ('https_html', 'github_file', 'issue_export')", name="ck_source_connector"),
+        CheckConstraint("document_type IN ('reference', 'release_notes', 'test_code', 'issue_report')", name="ck_source_purpose"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

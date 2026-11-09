@@ -19,7 +19,7 @@ POLICY = "python-sphinx-service-v1"
 
 # Only these application-authored messages may be persisted or returned.
 ERRORS = {
-    "unsupported_source": "This sync supports versioned Python HTML or the curated pinned repository source only.",
+    "unsupported_source": "This sync supports versioned Python HTML, the curated repository file or the curated issue export only.",
     "unsafe_destination": "The source or redirect is outside the permitted versioned destination.",
     "network_error": "The document request was interrupted or timed out.",
     "http_temporary": "The document server is temporarily unavailable or rate limited.",
@@ -30,6 +30,8 @@ ERRORS = {
     "repository_invalid": "The repository response did not match the pinned commit, path or file content.",
     "repository_parse": "The Python file could not be parsed or the selected class was missing.",
     "repository_rate_limit": "GitHub access is rate limited; this job stopped. Wait before requesting a new sync.",
+    "issue_export_invalid": "The issue export is malformed or does not match the reviewed identity, scope or hash.",
+    "issue_export_unavailable": "The reviewed issue export is unavailable; prepare the operator-owned frozen export first.",
     "artifact_error": "A local artifact could not be saved or verified.",
     "worker_lost": "The worker claim expired before completion.",
     "dispatch_exhausted": "Task delivery attempts were exhausted; request a new sync to retry.",

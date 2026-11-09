@@ -58,6 +58,7 @@ class WorkerSettings(BaseSettings):
     database_url: SecretStr = Field(repr=False)
     broker_url: SecretStr = Field(repr=False)
     artifact_root: Path = Path("data/service/artifacts")
+    issue_export_root: Path | None = None
     queue: str = Field(default="doclens-ingestion", pattern=r"^[a-zA-Z0-9_-]{1,80}$")
     lease_seconds: int = Field(default=120, ge=90, le=600)
 

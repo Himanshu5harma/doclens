@@ -19,6 +19,7 @@ from doclens.service.settings import WorkerSettings
 from doclens.service.worker import create_worker, start_worker
 from doclens.service.repository import SOURCE_URL, parse_repository, git_blob_sha
 from doclens.service import source_adapters
+from doclens.service.issue_export import SOURCE_URL as ISSUE_URL, fetch_issue_export, parse_issue_export
 
 settings = WorkerSettings()
 root = settings.artifact_root.parent
@@ -31,6 +32,9 @@ source_adapters.source_metadata = lambda: {
 
 
 def fetcher(source):
+    if source["connector_kind"] == "issue_export":
+        # Reviewed real public curation, local frozen input; no remote requests.
+        return fetch_issue_export(source, export_root=settings.issue_export_root or root / "issue-exports")
     if source["connector_kind"] == "github_file":
         return Snapshot(CODE, source["url"], utcnow())
     if source["name"].startswith("retry-"):
@@ -41,6 +45,8 @@ def fetcher(source):
 
 
 def parser(content, *, source_url):
+    if source_url == ISSUE_URL:
+        return parse_issue_export(content, source_url=source_url)
     if source_url == SOURCE_URL:
         return parse_repository(content, source_url=source_url)
     barrier = root / "parser-barrier"
