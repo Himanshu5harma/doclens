@@ -1,7 +1,9 @@
 name: doclens-stage1
 services:
   postgres:
-    image: postgres:18.6-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    # Stage 4: PostgreSQL 18 + pgvector 0.8.7 (Debian bookworm), digest-pinned. Replaces the earlier
+    # postgres:18.6-alpine image; an existing alpine-created volume should be recreated (glibc vs musl collations).
+    image: pgvector/pgvector:0.8.7-pg18-bookworm@sha256:38681dc6eaf55308e2a4c6de392d131652dcfac70e1263e35cd9b5ea3fe39782
     environment:
       POSTGRES_USER: doclens_dev_admin
       POSTGRES_DB: doclens_service

@@ -1,6 +1,6 @@
 # Current learning checkpoint
 
-Last updated: 2026-11-09 (Asia/Kolkata).
+Last updated: 2026-11-15 (Asia/Kolkata).
 
 ## Goal and working agreement
 
@@ -10,7 +10,22 @@ The product has two simultaneous goals: useful public answers for actual enginee
 
 Public descriptions focus on DocLens's purpose and honest capabilities, rather than calling it a portfolio project. Learning goals remain in the roadmap, learning notes, and assistant instructions. Read `AGENTS.md` for the full working agreement and resume here without asking the user to explain the project again.
 
-## Current checkpoint: selected Stage 3 ingestion units verified; stop before Stage 4
+## Current checkpoint: Stage 4 scoped persistent retrieval verified locally; stop before Stage 5
+
+### Stage 4 scoped persistent retrieval, 2026-11-15 (Windows clone)
+
+Requested as a side session from the user's project-setup session. Read the guidance, checkpoint, plan, architecture/retrieval and evaluation rules plus the actual service, chunk, embedding, retrieval and evaluation code. Design and tradeoffs are in [the Stage 4 guide](stage4-retrieval.md).
+
+**Implemented (uncommitted):** migration `0005_retrieval_index` (verifies the operator-installed `vector` extension; `revision_indexes` marker + immutable `retrieval_chunks` with `vector(768)`; app SELECT, worker SELECT/INSERT, no UPDATE/DELETE); `retrieval_index.py` (explicit HTML-v1/repository-v2/issue-v3 adapter checked against the DB revision, unchanged `section-anchor-v1` chunker, refusal instead of truncation, one-transaction idempotent indexing, exact cosine search with membership/workspace/current-publication/product/version/index filters in one statement before ordering); `python -m doclens.service.indexer` (worker role, explicit command); `POST /api/v1/workspaces/{id}/search`; `scripts/stage4_eval.py`. `pgvector` 0.4.2 added to the `service` extra (lock adds only that package). `compose.stage1.yaml` now uses digest-pinned `pgvector/pgvector:0.8.7-pg18-bookworm` (PostgreSQL 18.7 observed); provisioning runs `CREATE EXTENSION IF NOT EXISTS vector`. Recreate any alpine-created dev volume. The API needs the `retrieval` extra for query encoding.
+
+**Verified on real services (Docker 29.9.3, fresh volumes, real Keycloak):** migrated to head; `alembic check` reported no new upgrade operations. All **8 opt-in PostgreSQL/pgvector cases** pass (grants, idempotent indexing, exact order vs brute-force cosine, non-member 404/401, no cross-workspace leak of identical content, revocation inside the ranking statement, revision replacement without mixing, concurrent indexers) plus **16 offline cases**. Full integration run: 335 passed, 20 skipped, 13 failed + 1 error (`outputs/stage4/integration-20261115.xml`); every failure is pre-existing and Windows-specific: SQLite temp-file locks, `os.O_NOFOLLOW` (issue-export offline and two real ingestion cases), `os.killpg` (worker CLI test), and the committed issue curation's SHA-256 changing under `core.autocrlf=true`. `run_job` returns `finished` on success; the first test draft wrongly expected `succeeded` and was corrected. Redis/Celery prefork worker integration was not run on Windows.
+
+**Dev comparison:** the clone had no `data/`, so the 20 pages were re-fetched (all 20 raw hashes differ from the frozen pins) and the pinned model downloaded. [Results](../evals/stage4-pgvector-dev.md): 1,474 service chunks identical to the baseline chunker (0 mismatches); pgvector and a fresh SQLite index give identical metrics and **26/26 identical rankings** (max score difference 1.9e-7). Single-release 0.9737 / 0.8947 / 1.0, comparison 0.75 / 0.4375 / 0.75, 0/130 wrong-version, numerically equal to the frozen baseline. Dataset used is a labeled hash-only derived copy under `outputs/stage4/`; `evals/` unchanged, held-out not opened, nothing tuned. No provider call, commit or push.
+
+**Next:** Stage 5 grounded answer API only on request. Separate follow-ups: Windows portability (`.gitattributes` for hash-pinned files, `O_NOFOLLOW`/`killpg`, SQLite cleanup); automatic index-on-publish and superseded-chunk cleanup belong to Stage 6; lexical/hybrid/reranking to Stage 7.
+
+## Previous checkpoint: selected Stage 3 ingestion units verified
+
 
 ### Curated issue-export unit, 2026-11-09
 

@@ -3,8 +3,9 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import (CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index,
-                        Integer, MetaData, String, UniqueConstraint, func, text)
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import (Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index,
+                        Integer, MetaData, String, Text, UniqueConstraint, func, text)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -146,3 +147,70 @@ class SourcePublication(Base):
     source_id: Mapped[UUID] = mapped_column(primary_key=True)
     workspace_id: Mapped[UUID]
     revision_id: Mapped[UUID]
+
+
+EMBEDDING_DIMENSIONS = 768  # vector(768) is fixed by migration 0005; a new model needs a new migration.
+
+
+class RevisionIndex(Base):
+    """Marks a revision's complete chunk set for one retrieval configuration.
+
+    The row and all of its chunks commit in one transaction, so search never
+    observes a partially indexed revision.
+    """
+    __tablename__ = "revision_indexes"
+    __table_args__ = (
+        ForeignKeyConstraint(["revision_id", "source_id", "workspace_id"],
+                             [f"{SCHEMA}.source_revisions.id", f"{SCHEMA}.source_revisions.source_id", f"{SCHEMA}.source_revisions.workspace_id"]),
+        UniqueConstraint("revision_id", "index_id", "source_id", "workspace_id", name="uq_revision_index_scope"),
+        CheckConstraint("chunk_count >= 1 AND max_tokens >= 1", name="ck_revision_index_counts"),
+    )
+
+    revision_id: Mapped[UUID] = mapped_column(primary_key=True)
+    index_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source_id: Mapped[UUID]
+    workspace_id: Mapped[UUID] = mapped_column(index=True)
+    document_schema: Mapped[str] = mapped_column(String(64))
+    config: Mapped[dict] = mapped_column(JSONB)
+    runtime: Mapped[dict] = mapped_column(JSONB)
+    chunk_count: Mapped[int]
+    max_tokens: Mapped[int]
+    chunk_set_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RetrievalChunk(Base):
+    """Immutable chunk + vector. Scope/product/version are copied from the revision snapshot."""
+    __tablename__ = "retrieval_chunks"
+    __table_args__ = (
+        ForeignKeyConstraint(["revision_id", "index_id", "source_id", "workspace_id"],
+                             [f"{SCHEMA}.revision_indexes.revision_id", f"{SCHEMA}.revision_indexes.index_id",
+                              f"{SCHEMA}.revision_indexes.source_id", f"{SCHEMA}.revision_indexes.workspace_id"]),
+        UniqueConstraint("revision_id", "index_id", "chunk_key", name="uq_chunk_identity"),
+        UniqueConstraint("revision_id", "index_id", "ordinal", name="uq_chunk_ordinal"),
+        CheckConstraint("ordinal >= 0 AND section_index >= 0 AND token_count >= 1", name="ck_chunk_counts"),
+        # Filtering columns for exact search; ranking itself is a full exact scan of the filtered rows.
+        Index("ix_retrieval_chunks_scope", "workspace_id", "product", "version", "index_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    revision_id: Mapped[UUID]
+    index_id: Mapped[str] = mapped_column(String(64))
+    source_id: Mapped[UUID]
+    workspace_id: Mapped[UUID]
+    product: Mapped[str] = mapped_column(String(64))
+    version: Mapped[str] = mapped_column(String(64))
+    document_type: Mapped[str] = mapped_column(String(32))
+    ordinal: Mapped[int]
+    chunk_key: Mapped[str] = mapped_column(String(80))
+    section_index: Mapped[int]
+    heading_path: Mapped[list] = mapped_column(JSONB)
+    anchor: Mapped[str | None] = mapped_column(String(512))
+    url: Mapped[str] = mapped_column(String(2048))
+    location: Mapped[dict] = mapped_column(JSONB)
+    document_title: Mapped[str] = mapped_column(String(512))
+    text: Mapped[str] = mapped_column(Text)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    oversized: Mapped[bool] = mapped_column(Boolean)
+    token_count: Mapped[int]
+    embedding = mapped_column(Vector(EMBEDDING_DIMENSIONS), nullable=False)

@@ -87,6 +87,7 @@ def create_app(settings: ServiceSettings | None = None, *, verifier: TokenVerifi
     app = FastAPI(title="DocLens source service", version="1", lifespan=lifespan)
     app.state.sessions = sessionmaker(engine, expire_on_commit=False)
     app.state.verifier = verifier or TokenVerifier(settings)
+    app.state.settings = settings
     from doclens.service.ingestion_io import ArtifactStore
     app.state.artifacts = ArtifactStore(settings.artifact_root)
 
@@ -155,4 +156,6 @@ def create_app(settings: ServiceSettings | None = None, *, verifier: TokenVerifi
 
     from doclens.service.ingestion_api import router as ingestion_router
     app.include_router(ingestion_router)
+    from doclens.service.retrieval_api import router as retrieval_router
+    app.include_router(retrieval_router)
     return app

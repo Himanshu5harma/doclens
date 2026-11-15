@@ -151,3 +151,47 @@ class RevisionRead(BaseModel):
     code_count: int
     raw_artifact_url: str = ""
     parsed_artifact_url: str = ""
+
+
+class SearchCreate(BaseModel):
+    """Scope comes from the path + current membership; product/version are mandatory filters."""
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    query: str = Field(min_length=1, max_length=1000)
+    product: str = Field(pattern=r"^[a-z][a-z0-9._-]{0,63}$")
+    version: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$")
+    top_k: int = Field(default=5, ge=1, le=20)
+    document_types: list[Literal["reference", "release_notes", "test_code", "issue_report"]] | None = Field(
+        default=None, min_length=1, max_length=4)
+
+
+class SearchHitRead(BaseModel):
+    rank: int
+    score: float
+    chunk_id: UUID
+    chunk_key: str
+    source_id: UUID
+    source_name: str
+    revision_id: UUID
+    document_type: str
+    document_title: str
+    heading_path: list[str]
+    anchor: str | None
+    url: str
+    location: dict
+    text: str
+    content_hash: str
+    oversized: bool
+    token_count: int
+
+
+class SearchRead(BaseModel):
+    schema_version: Literal["doclens-search-v1"] = "doclens-search-v1"
+    query: str
+    product: str
+    version: str
+    candidate_count: int
+    index_id: str
+    model_id: str
+    model_revision: str
+    search: Literal["exact-cosine"] = "exact-cosine"
+    results: list[SearchHitRead]

@@ -145,6 +145,8 @@ def provision_database(database="doclens_service"):
                         .format(sql.Identifier(database)))
             con.execute(text("REVOKE CREATE ON SCHEMA public FROM PUBLIC"))
             con.execute(text("CREATE SCHEMA IF NOT EXISTS doclens_service AUTHORIZATION doclens_owner"))
+            # Stage 4: pgvector needs superuser to install; the owner/app/worker roles only use its type.
+            con.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     finally:
         engine.dispose()
     migrate(database)

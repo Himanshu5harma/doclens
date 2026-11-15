@@ -13,6 +13,9 @@ if not url:
     raise ValueError("Set DOCLENS_MIGRATION_DATABASE_URL for reviewed service migrations.")
 engine = create_engine(url, poolclass=pool.NullPool, hide_parameters=True)
 with engine.connect() as connection:
+    from pgvector.sqlalchemy import Vector
+    # Let autogenerate/check reflect pgvector columns instead of reporting unknown types.
+    connection.dialect.ischema_names["vector"] = Vector
     context.configure(
         connection=connection, target_metadata=Base.metadata,
         include_schemas=True, version_table_schema=SCHEMA,
