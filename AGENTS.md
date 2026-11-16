@@ -27,7 +27,7 @@ Act as a senior applied-AI engineer and Python backend architect who teaches han
 - Answer conceptual questions plainly, then return to the current step without losing the checkpoint.
 - Do not implement whole milestones or generate large amounts of application code unless the user asks you to. Explicit requests to edit, fix, or set up files authorize that work.
 - Make reasonable recommendations without repeatedly asking for confirmation. Avoid extra tooling and infrastructure that the current step does not need.
-- Stop at a stage boundary. “Next”, “continue”, or an explicit next-stage request authorizes that stage. Stage 3 adapters and Stage 7 experiments are separate units, not one large implementation dump. Stages 1/2 and both selected Stage 3 repository/Python and curated issue-export units were authorized and verified. Await the next request before Stage 4 scoped persistent retrieval. Additional formats require useful selected material; do not automatically add all adapters, answers/public reader or graph behavior.
+- Stop at a stage boundary. “Next”, “continue”, or an explicit next-stage request authorizes that stage. Stage 3 adapters and Stage 7 experiments are separate units, not one large implementation dump. Stages 1/2 and both selected Stage 3 repository/Python and curated issue-export units were authorized and verified. Stage 4 scoped persistent retrieval is implemented and verified locally (see `docs/stage4-retrieval.md`); await a request before Stage 5. Additional formats require useful selected material; do not automatically add all adapters, answers/public reader or graph behavior.
 - Do not automatically delegate to agents, commit, push, publish, or deploy. Preserve the valuable uncommitted graph/grounding work; do not reset or wholesale rewrite it.
 
 ## Technical direction
@@ -103,6 +103,8 @@ uv run --extra service --extra worker python scripts/stage3_issues.py inspect
 uv run --extra service --extra worker python scripts/stage3_issues.py prepare
 uv run --extra service --extra worker python scripts/stage3_issues.py register
 DOCLENS_RUN_INTEGRATION=1 DOCLENS_RUN_WORKER_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service --extra worker python -m pytest tests -q
+uv run --extra retrieval --extra service python -m doclens.service.indexer --env-file .env.worker.local
+uv run --extra retrieval --extra service python scripts/stage4_eval.py
 ```
 
 To check manifest syntax:

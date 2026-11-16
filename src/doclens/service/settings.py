@@ -19,8 +19,9 @@ class ServiceSettings(BaseSettings):
     jwks_timeout_seconds: float = Field(default=5, ge=1, le=10)
     jwks_cache_seconds: int = Field(default=300, ge=1, le=600)
     artifact_root: Path = Path("data/service/artifacts")
-
-
+    # Stage 4 query encoding reuses the baseline's pinned model files (cached, offline).
+    embedding_config: Path = Path("configs/retrieval.json")
+    model_cache: Path = Path("data/models")
 
     @field_validator("database_url")
     @classmethod
@@ -80,3 +81,18 @@ class WorkerSettings(BaseSettings):
         except ValueError:
             raise ValueError("Use an authenticated Redis connection with TLS except on explicit loopback.") from None
         return value
+
+
+class IndexerSettings(BaseSettings):
+    """Indexer uses the restricted worker DB role; it needs no broker or IdP secrets."""
+    model_config = SettingsConfigDict(env_prefix="DOCLENS_", extra="ignore")
+
+    database_url: SecretStr = Field(repr=False)
+    artifact_root: Path = Path("data/service/artifacts")
+    embedding_config: Path = Path("configs/retrieval.json")
+    model_cache: Path = Path("data/models")
+
+    @field_validator("database_url")
+    @classmethod
+    def postgres_only(cls, value):
+        return ServiceSettings.postgres_only(value)
