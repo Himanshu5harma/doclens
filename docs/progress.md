@@ -1,6 +1,6 @@
 # Current learning checkpoint
 
-Last updated: 2026-11-09 (Asia/Kolkata).
+Last updated: 2026-11-16 (Asia/Kolkata).
 
 ## Goal and working agreement
 
@@ -11,6 +11,16 @@ The product has two simultaneous goals: useful public answers for actual enginee
 Public descriptions focus on DocLens's purpose and honest capabilities, rather than calling it a portfolio project. Learning goals remain in the roadmap, learning notes, and assistant instructions. Read `AGENTS.md` for the full working agreement and resume here without asking the user to explain the project again.
 
 ## Current checkpoint: selected Stage 3 ingestion units verified; stop before Stage 4
+
+### Local documentation commit, 2026-11-16
+
+The user requested a commit. Only the learning-request guidance below was pending; the curated issue implementation is already committed locally as `8c84df4`. At this check, the fetched `origin/main` contains Stage 4 commit `bb23258`, which has not been integrated into this local checkout. This documentation commit preserves the local learning guidance without merging, rebasing, pushing or claiming the remote implementation is verified here. Reconcile the fetched Stage 4 checkpoint with its actual implementation/evidence when integrating it; do not overwrite either checkpoint or repeat Stage 4 work from the older local status. Application tests were not rerun for this documentation-only change; `git diff --check` and commit-candidate credential/generated-file checks passed.
+
+### Current learning request, 2026-11-09
+
+The user asked how to master everything implemented so far, rather than finishing the remaining implementation before understanding the code. Recommend a guided learning pass before Stage 4: trace one baseline RAG request; inspect document/section/block/chunk provenance; understand embeddings/version-filtered search; test evidence/generation/citation failures; trace JWT/current membership and DB scope; follow durable jobs/recovery; compare the three adapters and then the existing optional graph wrapper. Teach Python concepts as they appear in those flows. For each unit, the user should explain the inputs/outputs and decisions, trace a real example, make a small fixture/code variation and debug its failure with review of their actual work. Do not infer mastery from generated code or test counts.
+
+Proposed first exercise: run the existing 3.13 file-URI question with `ask --inspect-prompt`; follow `__main__.py` → `answers.prepare_question` → `retrieval.search_index` → `answers.assemble_evidence`. Identify one citation's source/version/URL, distinguish evidence from prompt messages, and locate the SQL version filter. This computes local retrieval but skips provider generation. No learning exercise or understanding assessment has been completed yet. Keep learning notes user-authored; preserve frozen corpus/index/evaluation data and use synthetic fixtures for changes. Continue this learning request before treating a generic “next” as a feature request; an explicit implementation request can resume Stage 4. No feature code, model call or application test run was needed for this guidance-only update.
 
 ### Curated issue-export unit, 2026-11-09
 
