@@ -17,7 +17,7 @@ from pydantic import SecretStr
 from sqlalchemy import create_engine
 from psycopg import sql
 
-from doclens.service.settings import ServiceSettings
+from doclens.settings import ServiceSettings
 
 
 @pytest.fixture(scope="session")
@@ -92,7 +92,7 @@ def real_services(dev):
 @pytest.fixture
 def api(real_services):
     from fastapi.testclient import TestClient
-    from doclens.service.app import create_app
+    from doclens.api.app import create_app
     with TestClient(create_app(real_services.settings)) as client:
         yield client
 
@@ -106,8 +106,8 @@ def headers(real_services):
 def ingestion_case(api, headers, real_services, tmp_path):
     from sqlalchemy import update
     from sqlalchemy.orm import sessionmaker
-    from doclens.service.ingestion_io import ArtifactStore
-    from doclens.service.models import IngestionJob
+    from doclens.ingestion.artifacts import ArtifactStore
+    from doclens.db.models import IngestionJob
     from uuid import UUID
     source = {"name": "fixture-" + uuid4().hex, "product": "python", "version": "3.13",
               "url": f"https://docs.python.org/3.13/library/fixture-{uuid4().hex}.html",

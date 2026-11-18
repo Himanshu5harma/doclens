@@ -9,17 +9,18 @@ import pytest
 from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
 
-from doclens.service.ingestion import claim_job, dispatch_once, run_job, utcnow
-from doclens.service.ingestion_io import ArtifactStore, IngestionError
-from doclens.service.models import DispatchIntent, IngestionJob
+from doclens.ingestion.jobs import claim_job, dispatch_once, run_job, utcnow
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.base import IngestionError
+from doclens.db.models import DispatchIntent, IngestionJob
 
 
 @pytest.fixture
 def dispatch_case(real_services, api, headers, tmp_path):
     pytest.importorskip("celery", reason="Use the actual worker DB timeout configuration.")
     from pydantic import SecretStr
-    from doclens.service.settings import WorkerSettings
-    from doclens.service.worker import database_engine
+    from doclens.settings import WorkerSettings
+    from doclens.worker.celery_app import database_engine
     settings = WorkerSettings(_env_file=real_services.dev.ROOT / ".env.worker.local").model_copy(update={
         "database_url": SecretStr(real_services.dev.database_url("doclens_worker", real_services.owner.url.database)
                                   .render_as_string(hide_password=False))})

@@ -10,7 +10,21 @@ The product has two simultaneous goals: useful public answers for actual enginee
 
 Public descriptions focus on DocLens's purpose and honest capabilities, rather than calling it a portfolio project. Learning goals remain in the roadmap, learning notes, and assistant instructions. Read `AGENTS.md` for the full working agreement and resume here without asking the user to explain the project again.
 
-## Current checkpoint: Stage 4 scoped persistent retrieval verified locally; stop before Stage 5
+## Current checkpoint: unified layered codebase (migration step 1 of 4) verified; Stage 5 is step 2
+
+### Unified codebase restructure, 2026-11-18
+
+**User decisions:** build DocLens as one project with a clear architecture rather than a baseline CLI plus a separate service; use **PostgreSQL/pgvector only** (the SQLite code path is retired in steps; frozen artifacts stay). Migration plan (in [architecture](architecture.md#migration-plan-to-one-pipeline)): 1 layered restructure with no behavior change → 2 `Retriever` port + answers over pgvector + answer endpoint (this is Stage 5) → 3 thin CLI over the same application code, manifest as a seed catalog → 4 retire `legacy/`.
+
+**Step 1 done (uncommitted):** 28 old modules became 36 modules in `domain/`, `sources/`, `ingestion/`, `retrieval/`, `answers/`, `access/`, `db/`, `api/`, `worker/`, `settings.py` and `legacy/` ([module map](architecture.md#module-map)). Whole-file moves use `git mv` (history kept). Eight files were split along existing top-level definitions only: `parse.py` (parse_html → `sources/python_docs.py`, parse_source → legacy), `chunk.py`, `answers.py` (grounding core vs SQLite `prepare_question`/`display_answer`), `generation.py` (port vs OpenRouter adapter), `embeddings.py` (Encoder port), `ingestion_io.py` (base/http/python_docs/artifacts), `source_adapters.py` (SourceAdapter port → `sources/base.py`) and `service/app.py` (FastAPI deps → `api/deps.py`; router imports moved to module top now that the cycle is gone). Function bodies were not edited. Imports were rewritten by name resolution and checked with ruff 0.14.3 (`uvx`, not added to the project): no undefined names in `src/`. Entry points changed: `python -m doclens.worker {worker,dispatch}`, `python -m doclens.worker.indexer`, `uvicorn doclens.api.app:create_app`. Stored identifiers (`doclens_service` schema, `doclens-service-*` record/document versions, Celery task name `doclens.ingest_source`, logger names) are deliberately unchanged.
+
+**Verified:** offline pytest before/after: identical outcomes for 489 of 490 cases (283/282 passed, 75 skipped, same Windows failures). The one difference, `test_worker_cli`, is **pre-existing on Windows**: the pre-refactor HEAD code, run from a separate worktree on a clean process table, failed identically (worker logs "Shutting down" but does not exit within 18 s; cleanup calls POSIX-only `os.killpg`). Its earlier pass was intermittent. Hung worker processes started by these runs were stopped. Real PostgreSQL/Keycloak integration run (Docker, `DOCLENS_RUN_INTEGRATION=1`, worker CLI deselected): **350 passed, 5 skipped, 11 failed + 1 error**. Every case that passed in the Stage 4 run still passes, and the 15 LangGraph workflow tests skipped there now run and pass. Remaining failures are the known Windows set (SQLite temp locks, `O_NOFOLLOW`, CRLF hash of the issue curation). Reports: `outputs/refactor/offline-before.xml`, `offline-after.xml`, `integration-after.xml`. Redis/Celery prefork worker integration was not run on Windows. Containers were stopped again afterwards.
+
+Docs updated: architecture module map, dependency rule, ports table and migration plan; README layout/architecture text and commands; AGENTS.md layered-layout guidance and SQLite-retirement wording; module paths/commands in stage guides and baseline guides (each stage guide notes that older line numbers refer to the earlier layout). Historical entries below are unchanged and use the old paths.
+
+**Next:** migration step 2 = Stage 5 on request: define `Retriever` over `search_scope`, make grounding retriever-agnostic, add `POST /api/v1/workspaces/{id}/answer`, bounded live evaluation. Windows portability follow-up is separate.
+
+## Previous checkpoint: Stage 4 scoped persistent retrieval verified locally; stop before Stage 5
 
 ### README refresh, 2026-11-18 (documentation only)
 

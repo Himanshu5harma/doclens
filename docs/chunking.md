@@ -29,7 +29,7 @@ There is no sentence model, tokenizer, overlap tuning, or code summarization in 
 
 ## Records and code layout
 
-[records.py](../src/doclens/records.py) defines frozen standard-library dataclasses:
+[records.py](../src/doclens/domain/records.py) defines frozen standard-library dataclasses:
 
 - `Source`: product, string version, source ID, document type, page URL, raw HTML hash, fetch time, and source-terms URL.
 - `Block` and `Section`: typed block kinds, text, heading paths, anchors, and citation URLs.
@@ -39,7 +39,7 @@ There is no sentence model, tokenizer, overlap tuning, or code summarization in 
 
 Type annotations alone do not validate JSON. `document_from_dict()` checks the existing parsed schema before creating these records, including string versions, supported block kinds, heading paths, and citation URLs that match the source page and anchor. The reviewed parser keeps its existing JSON format; this adapter defines the boundary for the new component.
 
-[chunk.py](../src/doclens/chunk.py) separates the work:
+[chunk.py](../src/doclens/domain/chunking.py) separates the work:
 
 - `_pieces()` partitions oversized prose while retaining exact source offsets.
 - `chunk_document()` is the pure packing/identity algorithm; it does no I/O.

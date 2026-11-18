@@ -11,15 +11,15 @@ import time
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from doclens.parse import parse_html
-from doclens.service.ingestion import utcnow
-from doclens.service.ingestion_io import IngestionError, Snapshot
-from doclens.service.models import IngestionJob
-from doclens.service.settings import WorkerSettings
-from doclens.service.worker import create_worker, start_worker
-from doclens.service.repository import SOURCE_URL, parse_repository, git_blob_sha
-from doclens.service import source_adapters
-from doclens.service.issue_export import SOURCE_URL as ISSUE_URL, fetch_issue_export, parse_issue_export
+from doclens.sources.python_docs import parse_html
+from doclens.ingestion.jobs import utcnow
+from doclens.sources.base import IngestionError, Snapshot
+from doclens.db.models import IngestionJob
+from doclens.settings import WorkerSettings
+from doclens.worker.celery_app import create_worker, start_worker
+from doclens.sources.repository import SOURCE_URL, parse_repository, git_blob_sha
+from doclens.sources import registry as source_adapters
+from doclens.sources.issue_export import SOURCE_URL as ISSUE_URL, fetch_issue_export, parse_issue_export
 
 settings = WorkerSettings()
 root = settings.artifact_root.parent

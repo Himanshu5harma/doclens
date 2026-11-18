@@ -39,7 +39,7 @@ def database_url(user, database="doclens_service"):
 
 
 def settings():
-    from doclens.service.settings import ServiceSettings
+    from doclens.settings import ServiceSettings
     return ServiceSettings(_env_file=ROOT / ".env.service.local")
 
 
@@ -169,8 +169,8 @@ def migrate(database="doclens_service"):
 def seed(engine):
     from sqlalchemy import select
     from sqlalchemy.orm import Session
-    from doclens.service.auth import TokenVerifier
-    from doclens.service.models import Membership, Principal, Workspace
+    from doclens.access.tokens import TokenVerifier
+    from doclens.db.models import Membership, Principal, Workspace
     verifier = TokenVerifier(settings())
     identities = {alias: verifier.verify(token(alias)) for alias in ALIASES}
     workspaces = {name: uuid5(NAMESPACE_URL, "doclens-stage1-demo/" + name) for name in ("atlas", "boreal")}

@@ -7,14 +7,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
 
-from doclens.answer_evaluation import DEVELOPMENT_IDS, run_answer_sample
-from doclens.chunk import ChunkPolicy, chunk_document
-from doclens.embeddings import EmbeddingConfig
-from doclens.generation import Completion, GenerationConfig, GenerationError
-from doclens.answers import PROMPT_POLICY_ID
-from doclens.parse import parse_html
-from doclens.records import document_from_dict
-from doclens.retrieval import build_index
+from doclens.legacy.answer_evaluation import DEVELOPMENT_IDS, run_answer_sample
+from doclens.domain.chunking import ChunkPolicy, chunk_document
+from doclens.retrieval.embeddings import EmbeddingConfig
+from doclens.answers.ports import Completion, GenerationConfig, GenerationError
+from doclens.answers.grounding import PROMPT_POLICY_ID
+from doclens.sources.python_docs import parse_html
+from doclens.domain.records import document_from_dict
+from doclens.legacy.retrieval import build_index
 
 
 class Encoder:

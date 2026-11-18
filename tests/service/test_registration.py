@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import delete, func, insert, select, text
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
-from doclens.service.models import Membership, Principal, RegisteredSource, Workspace
+from doclens.db.models import Membership, Principal, RegisteredSource, Workspace
 
 
 def body(name=None):

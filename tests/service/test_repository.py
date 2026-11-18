@@ -8,12 +8,15 @@ import httpx
 from pydantic import ValidationError
 import pytest
 
-from doclens.service import repository
-from doclens.service.ingestion_io import IngestionError, PinnedTransport
-from doclens.service.repository import (FILE_LIMIT, FILE_PATH, REGISTRATION, RAW_URL,
-    SOURCE_URL, SYMBOL, fetch_repository, git_blob_sha, parse_repository, source_metadata)
-from doclens.service.schemas import SourceCreate
-from doclens.service.source_adapters import adapter_for
+from doclens.sources import repository
+from doclens.sources.base import IngestionError
+from doclens.sources.http import PinnedTransport
+from doclens.sources.repository import (
+    FILE_LIMIT, FILE_PATH, REGISTRATION, RAW_URL, SOURCE_URL, SYMBOL, fetch_repository, git_blob_sha,
+    parse_repository, source_metadata,
+)
+from doclens.api.schemas import SourceCreate
+from doclens.sources.registry import adapter_for
 
 CODE = (b'# Synthetic parser/HTTP fixture, not CPython evidence.\n'
         b'raise RuntimeError("must never execute")\n\n'

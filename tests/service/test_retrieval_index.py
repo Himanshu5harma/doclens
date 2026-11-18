@@ -12,13 +12,14 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.dialects import postgresql
 
-from doclens.chunk import ChunkPolicy, chunk_document
-from doclens.parse import parse_html
-from doclens.service import issue_export as issue
-from doclens.service import repository as repo
-from doclens.service.retrieval_index import (IndexingError, RetrievalConfig, prepare_revision,
-                                            search_scope, service_document)
-from doclens.service.schemas import SearchCreate
+from doclens.domain.chunking import ChunkPolicy, chunk_document
+from doclens.sources.python_docs import parse_html
+from doclens.sources import issue_export as issue
+from doclens.sources import repository as repo
+from doclens.retrieval.index import (
+    IndexingError, RetrievalConfig, prepare_revision, search_scope, service_document,
+)
+from doclens.api.schemas import SearchCreate
 from retrieval_fixtures import CONFIG, ROOT, HashingEncoder, revision_for
 
 HTML = (b'<main><section id="paths"><h1>Synthetic paths fixture</h1><p>Create a path from a file URI.</p>'
@@ -171,19 +172,19 @@ def test_search_request_rejects_scope_overrides_and_requires_version():
 def _offline_client(monkeypatch, service_settings, encoder):
     from uuid import uuid4
     from fastapi.testclient import TestClient
-    from doclens.service import app as app_module, retrieval_api
-    from doclens.service.auth import Identity
-    from doclens.service.models import RetrievalChunk
-    from doclens.service.retrieval_index import ScopedHit
+    from doclens.api import app as app_module, deps, search as retrieval_api
+    from doclens.access.tokens import Identity
+    from doclens.db.models import RetrievalChunk
+    from doclens.retrieval.index import ScopedHit
     app = app_module.create_app(service_settings, verifier=object())
     workspace = uuid4()
     calls = []
     identity = Identity.__new__(Identity)
     object.__setattr__(identity, "issuer", "https://idp.example.test/realms/test")
     object.__setattr__(identity, "subject", "viewer")
-    app.dependency_overrides[app_module.get_identity] = lambda: identity
-    app.dependency_overrides[app_module.get_session] = lambda: None
-    app.dependency_overrides[app_module.require_workspace] = lambda: app_module.WorkspaceAccess(workspace, uuid4(), "viewer")
+    app.dependency_overrides[deps.get_identity] = lambda: identity
+    app.dependency_overrides[deps.get_session] = lambda: None
+    app.dependency_overrides[deps.require_workspace] = lambda: deps.WorkspaceAccess(workspace, uuid4(), "viewer")
     row = RetrievalChunk(id=uuid4(), chunk_key="chunk-x", source_id=uuid4(), revision_id=uuid4(),
                          document_type="reference", document_title="T", heading_path=["T"], anchor="a",
                          url="https://docs.python.org/3.13/x.html#a", location={"kind": "page_anchor"},

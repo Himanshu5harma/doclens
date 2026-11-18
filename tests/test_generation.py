@@ -9,7 +9,8 @@ from http.client import IncompleteRead
 from urllib.error import HTTPError, URLError
 from unittest.mock import patch
 
-from doclens.generation import GenerationConfig, GenerationError, OpenRouterClient
+from doclens.answers.ports import GenerationConfig, GenerationError
+from doclens.answers.openrouter import OpenRouterClient
 
 
 CONFIG = GenerationConfig()

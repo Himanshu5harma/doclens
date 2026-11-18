@@ -7,9 +7,11 @@ import socket
 import httpx
 import pytest
 
-from doclens.service.ingestion_io import (ArtifactStore, IngestionError, PinnedTransport,
-    RAW_LIMIT, fetch_python, public_addresses, validate_destination)
-from doclens.service.settings import WorkerSettings
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.base import IngestionError, RAW_LIMIT
+from doclens.sources.http import PinnedTransport, public_addresses
+from doclens.sources.python_docs import fetch_python, validate_destination
+from doclens.settings import WorkerSettings
 
 SOURCE = {"product": "python", "version": "3.13", "connector_kind": "https_html",
           "url": "https://docs.python.org/3.13/library/pathlib.html"}
@@ -135,7 +137,7 @@ def test_artifact_paths_size_and_hash_are_checked(tmp_path):
 
 def test_worker_settings_and_celery_transport_bounds_do_not_expose_secrets(service_settings):
     pytest.importorskip("celery", reason="Optional worker extra.")
-    from doclens.service.worker import create_worker
+    from doclens.worker.celery_app import create_worker
     settings = WorkerSettings(database_url=service_settings.database_url,
                               broker_url="redis://:fixture-secret@127.0.0.1:16379/0")
     assert "fixture-secret" not in repr(settings)

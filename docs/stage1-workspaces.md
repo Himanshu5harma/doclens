@@ -1,5 +1,7 @@
 # Stage 1: authenticated workspaces and source ownership
 
+> Module paths and commands in this guide use the unified package layout introduced on 2026-11-18 ([module map](architecture.md#module-map)). Line numbers cited before that date refer to the earlier file layout.
+
 Implemented and locally verified on 2026-11-03. This adds a small optional FastAPI service alongside the unchanged RAG CLI/SQLite baseline. It registers and reads source metadata; it does not fetch, parse, index or generate answers. The public reader, browser sign-in, new adapters and worker are later stages.
 
 This guide records the Stage 1 boundary/results. Stage 2 was subsequently requested and implemented on 2026-11-04: [its guide](stage2-ingestion.md) covers source sync, worker/broker setup, the migration/worker role, current combined test commands/results and limits. Registration itself still performs no acquisition. The earlier Stage 1 HTTP report is preserved.
@@ -87,7 +89,7 @@ uv sync --extra service --group dev
 uv run --extra service python scripts/stage1_dev.py prepare
 docker compose -f compose.stage1.yaml up -d
 uv run --extra service python scripts/stage1_dev.py bootstrap
-uv run --extra service uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra service uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 ```
 
 `bootstrap` waits for local readiness, provisions restricted roles/schema, applies Alembic and seeds demonstration memberships using actually verified Keycloak identities. It is an operator command, not an API endpoint. There is no default password in source. `.env.service.local`, `.env.stage1.idp.local`, `data/service/dev/credentials.json` and the PostgreSQL secret file are ignored; do not print/commit them. The API configuration does not automatically read arbitrary `.env` files; the launch command explicitly selects its env file. Other deployments must supply HTTPS OIDC URLs; loopback HTTP requires the explicit development setting.
@@ -137,10 +139,10 @@ Current limits: application-enforced isolation (no RLS), a Keycloak-specific tok
 
 ## Trace the important code
 
-- [settings.py](../src/doclens/service/settings.py): typed settings and secret DSN wrapper; reject SQLite and unsafe OIDC transport configuration.
-- [auth.py](../src/doclens/service/auth.py): small immutable `Identity`, fixed verifier policy, cached library-managed JWKS and redacted failure types. It returns identity, not workspace grants.
-- [app.py](../src/doclens/service/app.py): `Annotated[..., Depends(...)]` wires identity/session/access dependencies; membership and source filters stay in SQL. `commit()`/`rollback()` make registration outcomes explicit.
-- [models.py](../src/doclens/service/models.py) and [schemas.py](../src/doclens/service/schemas.py): SQLAlchemy `Mapped` describes database fields; Pydantic validates untrusted requests and response shapes. They have different responsibilities.
+- [settings.py](../src/doclens/settings.py): typed settings and secret DSN wrapper; reject SQLite and unsafe OIDC transport configuration.
+- [auth.py](../src/doclens/access/tokens.py): small immutable `Identity`, fixed verifier policy, cached library-managed JWKS and redacted failure types. It returns identity, not workspace grants.
+- [app.py](../src/doclens/api/app.py): `Annotated[..., Depends(...)]` wires identity/session/access dependencies; membership and source filters stay in SQL. `commit()`/`rollback()` make registration outcomes explicit.
+- [models.py](../src/doclens/db/models.py) and [schemas.py](../src/doclens/api/schemas.py): SQLAlchemy `Mapped` describes database fields; Pydantic validates untrusted requests and response shapes. They have different responsibilities.
 - [the migration](../migrations/versions/0001_workspace_sources.py): executable reviewed schema/constraints/grants, instead of creating tables implicitly during an HTTP request.
 - [the local operator helper](../scripts/stage1_dev.py) and [tests](../tests/service/test_registration.py): operator credentials stay outside API requests; test identities exercise actual issued tokens and actual scoped DB operations.
 

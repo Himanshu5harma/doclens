@@ -40,7 +40,7 @@ flowchart LR
     end
 ```
 
-Application code handles authorization, provenance, stable IDs, revision publication and citation validation. Libraries provide transport, parsing, storage and vector math. See [architecture](docs/architecture.md) and the [expanded plan](docs/expanded-rag-plan.md).
+The code is one layered package with ports and adapters: pure `domain` logic at the center, application packages (`sources`, `ingestion`, `retrieval`, `answers`) around it, and thin `api`/`worker` interfaces at the edge. PostgreSQL/pgvector is the single store; the original SQLite pipeline lives in `legacy/` until the unified CLI replaces it. Application code handles authorization, provenance, stable IDs, revision publication and citation validation. Libraries provide transport, parsing, storage and vector math. See the [module map](docs/architecture.md#module-map) and the [expanded plan](docs/expanded-rag-plan.md).
 
 ## Results
 
@@ -116,7 +116,7 @@ uv sync --extra service --extra worker --extra retrieval --group dev
 uv run --extra service --extra worker python scripts/stage2_dev.py prepare
 docker compose -f compose.stage1.yaml -f compose.stage2.yaml up -d
 uv run --extra service --extra worker python scripts/stage1_dev.py bootstrap
-uv run --extra service uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra service uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 ```
 
 In another terminal, `uv run --extra service python scripts/stage1_dev.py request /api/v1/workspaces` gets a real local token without printing it. The stage guides cover the worker, dispatcher, source registration, indexing and search: [Stage 1](docs/stage1-workspaces.md#run-and-inspect), [Stage 2](docs/stage2-ingestion.md#run-and-inspect), [repository](docs/stage3-repository.md#run-and-inspect), [issue export](docs/stage3-issues.md#run-and-inspect) and [retrieval](docs/stage4-retrieval.md). The credentials are generated, ignored local development values. The local service accounts are not a human browser sign-in.
@@ -150,8 +150,15 @@ The first command runs the offline tests. The second also runs the real-service 
 doclens/
   corpus/               Curated source manifest and service catalogs
   configs/              Pinned embedding configuration
-  src/doclens/          Baseline ingestion, chunking, retrieval, answers, CLI
-  src/doclens/service/  FastAPI service, auth, ingestion jobs, worker, adapters, pgvector index
+  src/doclens/          One layered package (see docs/architecture.md#module-map):
+    domain/             Pure records and chunking rules
+    sources/            One adapter per source format (Python HTML, pinned repo file, issue export)
+    ingestion/          Durable job state machine and immutable artifact store
+    retrieval/          Local embeddings, indexing and scoped pgvector search
+    answers/            Grounded answering behind the Generator port (OpenRouter adapter)
+    access/ db/         Token verification; SQLAlchemy models
+    api/ worker/        Thin interfaces: FastAPI routers; Celery worker, dispatcher, indexer
+    legacy/             Baseline file/SQLite pipeline, being replaced step by step
   migrations/           Alembic revisions for the service schema
   scripts/              Local setup, registration and evaluation helpers
   compose.stage*.yaml   Digest-pinned PostgreSQL/pgvector, Keycloak, Redis

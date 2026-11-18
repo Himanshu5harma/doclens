@@ -6,7 +6,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 import pytest
 
-from doclens.service.schemas import SourceCreate, SourceRead
+from doclens.api.schemas import SourceCreate, SourceRead
 
 BODY = {"name": "Synthetic URL boundary fixture", "product": "python", "version": "3.13",
         "url": "https://docs.python.org/3.13/library/pathlib.html",

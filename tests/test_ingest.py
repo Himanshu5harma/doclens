@@ -54,7 +54,7 @@ class IngestTests(unittest.TestCase):
     def run_ingest(self, responses):
         with patch("sys.argv", ["doclens", "ingest", "--manifest", str(self.manifest)]):
             with patch("doclens.__main__.Path.cwd", return_value=self.root):
-                with patch("doclens.fetch.urlopen", side_effect=responses) as requests:
+                with patch("doclens.legacy.fetch.urlopen", side_effect=responses) as requests:
                     with redirect_stdout(self.output), redirect_stderr(self.errors):
                         main()
                     return requests

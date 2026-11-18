@@ -1,5 +1,63 @@
 # Architecture: implemented baseline and planned service
 
+## Unified codebase — one project, layered packages (2026-11-18)
+
+DocLens is **one application** rather than a "baseline CLI" plus a separate "service." The user chose a single PostgreSQL/pgvector store; the SQLite pipeline is retired in steps (below). The code is organized as **layers with ports and adapters**: core logic depends on small interfaces (ports), and concrete technologies (pgvector, OpenRouter, Keycloak, HTTPX, Celery) are adapters at the edges.
+
+### Module map
+
+```text
+src/doclens/
+  domain/      Pure records and rules. No I/O, no frameworks.
+    records.py       Source/Document/Section/Block/Chunk/SearchResult dataclasses, citation URLs, digests
+    chunking.py      ChunkPolicy + chunk_document (section-anchor-v1)
+  sources/     One adapter per source format, behind the SourceAdapter port.
+    base.py          SourceAdapter (port), Snapshot, IngestionError + fixed error vocabulary, size limits
+    http.py          PinnedTransport: public-IP-pinned HTTPS transport shared by network adapters
+    python_docs.py   Versioned Python/Sphinx HTML: fetch_python + parse_html
+    repository.py    One pinned CPython file: fixed raw URL, SHA-256/blob checks, selected class
+    issue_export.py  Curated historical issue JSON: strict schema, attributed summaries
+    registry.py      adapter_for(source): picks the adapter; job code stays format-agnostic
+  ingestion/   Durable job state machine and immutable artifacts.
+    jobs.py          claim/fence/run/publish/dispatch (PostgreSQL is the source of truth)
+    artifacts.py     ArtifactStore: hash-named, never-overwritten raw/parsed files
+  retrieval/   Embedding, indexing and scoped search.
+    ports.py         Encoder (port)
+    embeddings.py    EmbeddingConfig + LocalEncoder (Sentence Transformers adapter)
+    index.py         service_document → chunk → embed → one-transaction index; search_scope (pgvector)
+  answers/     Grounded answering.
+    ports.py         Generator (port), GenerationConfig, Completion, GenerationError
+    openrouter.py    OpenRouterClient (Generator adapter: zero-price checks, no retries)
+    grounding.py     assemble_evidence → prompt → answer_question → validate_answer
+  access/      tokens.py: Keycloak/JWT verification (authentication only)
+  db/          models.py: SQLAlchemy tables for the doclens_service schema (Alembic in migrations/)
+  settings.py  Validated service/worker/indexer settings
+  api/         HTTP interface (thin): app.py factory + workspace/source routes, deps.py (identity,
+               session, membership), ingestion.py, search.py, schemas.py
+  worker/      Process interfaces: `python -m doclens.worker {worker,dispatch}`, `python -m doclens.worker.indexer`
+  legacy/      Baseline file/SQLite pipeline (manifest, fetch, parse_source, chunk_source, SQLite retrieval,
+               evaluation, CLI answering, optional LangGraph workflow), kept until replaced
+  __main__.py  `python -m doclens` CLI (currently drives legacy/)
+```
+
+### Dependency rule
+
+Dependencies point **inward**: `api`, `worker` and `__main__` → application packages (`ingestion`, `retrieval`, `answers`, `sources`) → `domain`. `domain` imports nothing from DocLens except itself. Interfaces stay thin: they parse input, check access and call application functions. The current exception is `legacy/`, which still depends on application packages until it is removed.
+
+| Port | Defined in | Adapter(s) | Who depends on the port |
+| --- | --- | --- | --- |
+| `SourceAdapter` | `sources/base.py` | python_docs, repository, issue_export | `ingestion/jobs.py` via `sources/registry.py` |
+| `Encoder` | `retrieval/ports.py` | `LocalEncoder` | `retrieval/index.py`, `api/search.py`; tests use fakes |
+| `Generator` | `answers/ports.py` | `OpenRouterClient` | `answers/grounding.py`; tests use fakes |
+| `Retriever` | planned in the unified-answer step | pgvector `search_scope` | answering, CLI, evaluation |
+
+### Migration plan to one pipeline
+
+1. **Layered restructure, no behavior change.** Done 2026-11-18. Moves only; code is unchanged except imports.
+2. **Answers over the unified retriever (Stage 5).** Add the `Retriever` port over `search_scope`; `answers/grounding.py` stops depending on SQLite; add the authenticated answer endpoint.
+3. **Thin CLI.** `ask`/`search`/`evaluate` call the same application code as the API; the corpus manifest becomes a seed catalog registered through normal source registration.
+4. **Retire legacy.** Remove `legacy/fetch`, `parse_source`, `chunk_source` and SQLite retrieval/evaluation after their replacements are verified. Frozen labels, held-out split and saved reports remain historical references.
+
 ## Expanded service — ownership, recoverable ingestion and selected adapters implemented
 
 The 2026-11-02 direction is a version-aware, permission-aware engineering support and incident knowledge assistant. Stage 1 implements authenticated workspace/source ownership with real Keycloak tokens/JWKS; Stage 2 adds durable jobs/dispatch, Redis/Celery workers, verified artifacts and fenced publication. Stage 3's selected units add pinned repository/Python-code normalization and a reviewed local historical issue export. Other formats, expanded retrieval/answers and the public visitor remain planned. The CLI/SQLite RAG pipeline below stays the reference. See [Stage 1](stage1-workspaces.md), [Stage 2](stage2-ingestion.md), [repository](stage3-repository.md), [issue export](stage3-issues.md) and the [expanded plan](expanded-rag-plan.md). Further graph expansion waits until expanded direct RAG works and is evaluated.

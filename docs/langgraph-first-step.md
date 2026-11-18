@@ -28,7 +28,7 @@ The `graph` extra locks LangGraph 1.2.19 and LangSmith 0.14.16 with their depend
 
 ## State, nodes, and edges
 
-Read [workflow.py](../src/doclens/workflow.py) alongside this guide. `WorkflowState` is a `TypedDict` describing question/product/version, inspection mode, and the intermediate `PreparedQuestion`, `Completion`, `AnswerResult`, or `WorkflowError`. Each node returns only its changed fields. For example, prepare returns `{"prepared": prepared}`; LangGraph adds that field to the state while retaining the question/version. These fields use normal replacement updates, so no message-history reducer is needed. Type annotations do not replace the existing runtime input/evidence/output checks.
+Read [workflow.py](../src/doclens/legacy/workflow.py) alongside this guide. `WorkflowState` is a `TypedDict` describing question/product/version, inspection mode, and the intermediate `PreparedQuestion`, `Completion`, `AnswerResult`, or `WorkflowError`. Each node returns only its changed fields. For example, prepare returns `{"prepared": prepared}`; LangGraph adds that field to the state while retaining the question/version. These fields use normal replacement updates, so no message-history reducer is needed. Type annotations do not replace the existing runtime input/evidence/output checks.
 
 Nodes perform work; edges decide what runs next:
 

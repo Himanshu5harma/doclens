@@ -7,11 +7,12 @@ import pytest
 from sqlalchemy import insert, select
 from sqlalchemy.orm import sessionmaker
 
-from doclens.service import source_adapters
-from doclens.service.ingestion import run_job, utcnow
-from doclens.service.ingestion_io import ArtifactStore, IngestionError, Snapshot
-from doclens.service.models import Membership, SourceRevision, Workspace
-from doclens.service.repository import COMMIT, REGISTRATION, SOURCE_URL, git_blob_sha
+from doclens.sources import registry as source_adapters
+from doclens.ingestion.jobs import run_job, utcnow
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.base import IngestionError, Snapshot
+from doclens.db.models import Membership, SourceRevision, Workspace
+from doclens.sources.repository import COMMIT, REGISTRATION, SOURCE_URL, git_blob_sha
 
 CODE = (b'# Synthetic repository ingestion fixture; not CPython evidence.\n'
         b'class TestNamedTemporaryFile:\n'

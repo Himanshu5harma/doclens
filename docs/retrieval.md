@@ -46,9 +46,9 @@ Text output prints the complete returned passages. JSON output includes the quer
 
 ## Read the code in this order
 
-1. [embeddings.py](../src/doclens/embeddings.py): `EmbeddingConfig` records the contract; `LocalEncoder` applies prefixes, checks token lengths, and encodes locally. Heavy imports are lazy, so ingestion/chunking and unit tests do not need a model download.
-2. [retrieval.py](../src/doclens/retrieval.py): `collect_chunks()` follows the active manifest; `build_index()` stores complete chunk payloads and little-endian float32 vectors; `search_index()` filters with SQL before decoding/scoring candidates.
-3. [records.py](../src/doclens/records.py): `SearchResult` and `SearchResponse` define inspectable typed output.
+1. [embeddings.py](../src/doclens/retrieval/embeddings.py): `EmbeddingConfig` records the contract; `LocalEncoder` applies prefixes, checks token lengths, and encodes locally. Heavy imports are lazy, so ingestion/chunking and unit tests do not need a model download.
+2. [retrieval.py](../src/doclens/legacy/retrieval.py): `collect_chunks()` follows the active manifest; `build_index()` stores complete chunk payloads and little-endian float32 vectors; `search_index()` filters with SQL before decoding/scoring candidates.
+3. [records.py](../src/doclens/domain/records.py): `SearchResult` and `SearchResponse` define inspectable typed output.
 4. [__main__.py](../src/doclens/__main__.py): CLI wiring for the explicit `index` and `search` actions.
 
 The SQL candidate filter is:

@@ -14,10 +14,10 @@ from unittest.mock import patch
 from urllib.error import URLError
 
 from doclens.__main__ import main
-from doclens.fetch import fetch_source
-from doclens.files import write_atomic
-from doclens.manifest import load_sources
-from doclens.parse import parse_source
+from doclens.legacy.fetch import fetch_source
+from doclens.legacy.files import write_atomic
+from doclens.legacy.manifest import load_sources
+from doclens.legacy.parse import parse_source
 
 
 class HTMLResponse(io.BytesIO):
@@ -64,7 +64,7 @@ class FetchTests(unittest.TestCase):
 
     def test_saved_bytes_match_provenance_and_preserve_source_metadata(self):
         content = b"<!doctype html><html>\r\n<pre>caf\xc3\xa9</pre></html>"
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse(content)):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(content)):
             result = fetch_source(self.source, root=self.root)
 
         saved = self.destination.read_bytes()
@@ -80,17 +80,17 @@ class FetchTests(unittest.TestCase):
     def test_refresh_replaces_existing_files_and_updates_hash(self):
         hashes = []
         for body in (b"<html>first</html>", b"<html>updated</html>"):
-            with patch("doclens.fetch.urlopen", return_value=HTMLResponse(body)):
+            with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(body)):
                 hashes.append(fetch_source(self.source, root=self.root)["sha256"])
         self.assertNotEqual(*hashes)
         self.assertEqual(self.destination.read_bytes(), b"<html>updated</html>")
         self.assertEqual(len(list(self.destination.parent.iterdir())), 2)
 
     def test_network_failure_preserves_previous_download(self):
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse()):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse()):
             fetch_source(self.source, root=self.root)
         before = (self.destination.read_bytes(), self.metadata_path.read_bytes())
-        with patch("doclens.fetch.urlopen", side_effect=URLError("offline")):
+        with patch("doclens.legacy.fetch.urlopen", side_effect=URLError("offline")):
             with self.assertRaises(URLError):
                 fetch_source(self.source, root=self.root)
         self.assertEqual(before, (self.destination.read_bytes(), self.metadata_path.read_bytes()))
@@ -98,7 +98,7 @@ class FetchTests(unittest.TestCase):
     def test_rejects_empty_or_non_html_responses_without_saving(self):
         for content, content_type in ((b"", "text/html"), (b'{"error": "no page"}', "application/json")):
             with self.subTest(content_type=content_type):
-                with patch("doclens.fetch.urlopen", return_value=HTMLResponse(content, content_type)):
+                with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(content, content_type)):
                     with self.assertRaises(ValueError):
                         fetch_source(self.source, root=self.root)
                 self.assertFalse(self.destination.exists())
@@ -125,7 +125,7 @@ class FetchTests(unittest.TestCase):
         output = io.StringIO()
         with patch("sys.argv", ["doclens", "fetch", "--manifest", str(manifest_path)]):
             with patch("doclens.__main__.Path.cwd", return_value=self.root):
-                with patch("doclens.fetch.urlopen", side_effect=[HTMLResponse(), HTMLResponse(url=second["url"])]):
+                with patch("doclens.legacy.fetch.urlopen", side_effect=[HTMLResponse(), HTMLResponse(url=second["url"])]):
                     with redirect_stdout(output):
                         main()
         for source in (self.source, second):
@@ -137,7 +137,7 @@ class FetchTests(unittest.TestCase):
 
     def test_rejects_wrong_version_or_host_redirects_without_overwriting_downloads(self):
         source = self.source_for_version("3.13")
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse(url=source["url"])):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(url=source["url"])):
             fetch_source(source, root=self.root)
         path = self.root / source["local_path"]
         metadata_path = path.with_name(path.name + ".metadata.json")
@@ -152,7 +152,7 @@ class FetchTests(unittest.TestCase):
         ):
             with self.subTest(url=url):
                 response = HTMLResponse(b"<html>wrong release</html>", url=url)
-                with patch("doclens.fetch.urlopen", return_value=response):
+                with patch("doclens.legacy.fetch.urlopen", return_value=response):
                     with self.assertRaisesRegex(ValueError, source["source_id"]):
                         fetch_source(source, root=self.root)
                 self.assertEqual(before, (path.read_bytes(), metadata_path.read_bytes()))
@@ -160,14 +160,14 @@ class FetchTests(unittest.TestCase):
     def test_allows_a_same_host_same_version_redirect(self):
         source = self.source_for_version("3.13")
         final_url = "https://docs.example.test/3.13/library/pathlib.html"
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse(url=final_url)):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(url=final_url)):
             metadata = fetch_source(source, root=self.root)
         self.assertEqual(metadata["final_url"], final_url)
         self.assertEqual(metadata["url"], source["url"])
         self.assertEqual(metadata["version"], "3.13")
 
     def test_cli_reports_http_read_failures_and_preserves_previous_downloads(self):
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse()):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse()):
             fetch_source(self.source, root=self.root)
         before = (self.destination.read_bytes(), self.metadata_path.read_bytes())
         manifest_path = self.root / "sources.json"
@@ -178,7 +178,7 @@ class FetchTests(unittest.TestCase):
                 stderr = io.StringIO()
                 with patch("sys.argv", ["doclens", "fetch", "--manifest", str(manifest_path)]):
                     with patch("doclens.__main__.Path.cwd", return_value=self.root):
-                        with patch("doclens.fetch.urlopen", return_value=response):
+                        with patch("doclens.legacy.fetch.urlopen", return_value=response):
                             with patch.object(response, "read", side_effect=error):
                                 with redirect_stderr(stderr), self.assertRaises(SystemExit) as exit:
                                     main()
@@ -190,7 +190,7 @@ class FetchTests(unittest.TestCase):
 
     def test_parser_rejects_a_refresh_interrupted_between_html_and_metadata_writes(self):
         original = b"<main><h1>Paths</h1><p>Original documentation.</p></main>"
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse(original)):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(original)):
             fetch_source(self.source, root=self.root)
         parse_source(self.source, root=self.root)
         parsed_path = self.root / "data/parsed/python/3.12/pathlib.html.json"
@@ -203,8 +203,8 @@ class FetchTests(unittest.TestCase):
             write_atomic(path, content)
 
         updated = b"<main><h1>Paths</h1><p>Updated documentation.</p></main>"
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse(updated)):
-            with patch("doclens.fetch.write_atomic", side_effect=fail_metadata_write):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(updated)):
+            with patch("doclens.legacy.fetch.write_atomic", side_effect=fail_metadata_write):
                 with self.assertRaises(OSError):
                     fetch_source(self.source, root=self.root)
         self.assertEqual(self.destination.read_bytes(), updated)
@@ -215,7 +215,7 @@ class FetchTests(unittest.TestCase):
 
     def test_cli_keeps_first_success_when_second_source_read_fails(self):
         second = self.source_for_version("3.13")
-        with patch("doclens.fetch.urlopen", return_value=HTMLResponse(url=second["url"])):
+        with patch("doclens.legacy.fetch.urlopen", return_value=HTMLResponse(url=second["url"])):
             fetch_source(second, root=self.root)
         second_path = self.root / second["local_path"]
         second_metadata_path = second_path.with_name(second_path.name + ".metadata.json")
@@ -229,7 +229,7 @@ class FetchTests(unittest.TestCase):
             with patch("sys.argv", ["doclens", "fetch", "--manifest", str(manifest_path)]):
                 with patch("doclens.__main__.Path.cwd", return_value=self.root):
                     responses = [HTMLResponse(updated_first), incomplete]
-                    with patch("doclens.fetch.urlopen", side_effect=responses):
+                    with patch("doclens.legacy.fetch.urlopen", side_effect=responses):
                         with redirect_stdout(output), redirect_stderr(stderr):
                             with self.assertRaises(SystemExit) as exit:
                                 main()

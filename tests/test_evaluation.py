@@ -13,15 +13,15 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from doclens.__main__ import main
-from doclens.chunk import ChunkPolicy, chunk_document
-from doclens.embeddings import EmbeddingConfig
-from doclens.evaluation import (
-    EvidenceCatalog, EvidenceGroup, EvidenceReference, EvaluationQuestion,
-    aggregate, load_catalog, load_questions, run_evaluation, score_question, validate_snapshot,
+from doclens.domain.chunking import ChunkPolicy, chunk_document
+from doclens.retrieval.embeddings import EmbeddingConfig
+from doclens.legacy.evaluation import (
+    EvidenceCatalog, EvidenceGroup, EvidenceReference, EvaluationQuestion, aggregate, load_catalog,
+    load_questions, run_evaluation, score_question, validate_snapshot,
 )
-from doclens.parse import parse_html
-from doclens.records import SearchResponse, SearchResult, Source, document_from_dict
-from doclens.retrieval import build_index, search_index
+from doclens.sources.python_docs import parse_html
+from doclens.domain.records import SearchResponse, SearchResult, Source, document_from_dict
+from doclens.legacy.retrieval import build_index, search_index
 
 
 CONFIG = EmbeddingConfig("test/encoder", "a" * 40, 3, 100, "document: ", "query: ")
@@ -287,7 +287,7 @@ class EvaluationRunTests(unittest.TestCase):
     def test_cli_outputs_metrics_and_report_location(self):
         args = ["doclens", "evaluate", "--dataset", str(self.dataset), "--index", str(self.index), "--output", str(self.output)]
         output = io.StringIO()
-        with patch("sys.argv", args), patch("doclens.evaluation.LocalEncoder", return_value=self.encoder):
+        with patch("sys.argv", args), patch("doclens.legacy.evaluation.LocalEncoder", return_value=self.encoder):
             with redirect_stdout(output):
                 main()
         self.assertIn("evidence_recall@5=1.0000", output.getvalue())

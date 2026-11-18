@@ -10,7 +10,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from doclens.__main__ import main
-from doclens.parse import parse_html, parse_source
+from doclens.sources.python_docs import parse_html
+from doclens.legacy.parse import parse_source
 
 
 HTML = b'''<!doctype html><html><head>
@@ -146,7 +147,7 @@ class ParseTests(unittest.TestCase):
         output = io.StringIO()
         with patch("sys.argv", ["doclens", "parse", "--manifest", str(manifest_path)]):
             with patch("doclens.__main__.Path.cwd", return_value=self.root):
-                with patch("doclens.fetch.urlopen", side_effect=AssertionError("Parsing must stay offline")):
+                with patch("doclens.legacy.fetch.urlopen", side_effect=AssertionError("Parsing must stay offline")):
                     with redirect_stdout(output):
                         main()
         self.assertIn("Parsed 2 sources", output.getvalue())

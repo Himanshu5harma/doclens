@@ -16,13 +16,13 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 from doclens.__main__ import main
-from doclens.answers import answer_question, assemble_evidence
-from doclens.chunk import ChunkPolicy, chunk_document
-from doclens.embeddings import EmbeddingConfig
-from doclens.generation import Completion, GenerationConfig, GenerationError
-from doclens.parse import parse_html
-from doclens.records import SearchResponse, SearchResult, Source, document_from_dict
-from doclens.workflow import run_workflow
+from doclens.answers.grounding import answer_question, assemble_evidence
+from doclens.domain.chunking import ChunkPolicy, chunk_document
+from doclens.retrieval.embeddings import EmbeddingConfig
+from doclens.answers.ports import Completion, GenerationConfig, GenerationError
+from doclens.sources.python_docs import parse_html
+from doclens.domain.records import SearchResponse, SearchResult, Source, document_from_dict
+from doclens.legacy.workflow import run_workflow
 
 
 HAS_GRAPH = importlib.util.find_spec("langgraph") is not None
@@ -80,7 +80,7 @@ class WorkflowTests(unittest.TestCase):
                 self.assertEqual([e["node"] for e in self.events], ["prepare", "generate", "validate"])
 
     def test_inspection_stops_after_prepare_without_constructing_provider_client(self):
-        with patch("doclens.workflow.OpenRouterClient", side_effect=AssertionError("Must not construct client")):
+        with patch("doclens.legacy.workflow.OpenRouterClient", side_effect=AssertionError("Must not construct client")):
             state = run_workflow(Path("not-read"), "Question?", version="3.13", root=Path.cwd(),
                                  config=CONFIG, preparer=self.preparer, inspect_only=True,
                                  on_update=self.events.append)
@@ -204,8 +204,8 @@ class WorkflowTests(unittest.TestCase):
     def test_cli_graph_answer_json_and_local_trace_are_separate_streams(self):
         args = ["doclens", "ask", "Question?", "--version", "3.13", "--workflow", "graph", "--trace", "--json"]
         out, err = io.StringIO(), io.StringIO()
-        with patch("sys.argv", args), patch("doclens.workflow.prepare_question", return_value=self.prepared):
-            with patch("doclens.workflow.OpenRouterClient", return_value=self.client), redirect_stdout(out), redirect_stderr(err):
+        with patch("sys.argv", args), patch("doclens.legacy.workflow.prepare_question", return_value=self.prepared):
+            with patch("doclens.legacy.workflow.OpenRouterClient", return_value=self.client), redirect_stdout(out), redirect_stderr(err):
                 main()
         self.assertEqual(json.loads(out.getvalue())["status"], "answered")
         events = [json.loads(line) for line in err.getvalue().splitlines()]
@@ -215,14 +215,14 @@ class WorkflowTests(unittest.TestCase):
     def test_cli_inspection_and_provider_error(self):
         args = ["doclens", "ask", "Question?", "--version", "3.13", "--workflow", "graph", "--trace"]
         out, err = io.StringIO(), io.StringIO()
-        with patch("sys.argv", args + ["--inspect-prompt"]), patch("doclens.workflow.prepare_question", return_value=self.prepared):
-            with patch("doclens.workflow.OpenRouterClient", side_effect=AssertionError("No client")), redirect_stdout(out), redirect_stderr(err):
+        with patch("sys.argv", args + ["--inspect-prompt"]), patch("doclens.legacy.workflow.prepare_question", return_value=self.prepared):
+            with patch("doclens.legacy.workflow.OpenRouterClient", side_effect=AssertionError("No client")), redirect_stdout(out), redirect_stderr(err):
                 main()
         self.assertEqual(json.loads(out.getvalue())["prepared"]["messages"], list(self.prepared.messages))
         self.client.complete.side_effect = GenerationError("rate_limit", "Wait before retrying.")
         err = io.StringIO()
-        with patch("sys.argv", args), patch("doclens.workflow.prepare_question", return_value=self.prepared):
-            with patch("doclens.workflow.OpenRouterClient", return_value=self.client), redirect_stderr(err), self.assertRaises(SystemExit) as failure:
+        with patch("sys.argv", args), patch("doclens.legacy.workflow.prepare_question", return_value=self.prepared):
+            with patch("doclens.legacy.workflow.OpenRouterClient", return_value=self.client), redirect_stderr(err), self.assertRaises(SystemExit) as failure:
                 main()
         self.assertEqual(failure.exception.code, 1)
         self.assertIn("generate: Wait before retrying.", err.getvalue())
@@ -248,7 +248,7 @@ class WorkflowTests(unittest.TestCase):
                                       "document_type": "reference", "url": page, "sha256": hashlib.sha256(html).hexdigest(),
                                       "fetched_at": "2026-11-01T00:00:00Z", "source_terms_url": page}
                 chunks.extend(chunk_document(document_from_dict(document)))
-            from doclens.retrieval import build_index
+            from doclens.legacy.retrieval import build_index
             build_index(chunks, path=index, encoder=Encoder(), manifest_hash="f" * 64, policy=ChunkPolicy())
             before = {p: p.read_bytes() for p in (index, raw)}
             state = run_workflow(index, "Question?", version="3.13", root=root, config=CONFIG,
@@ -288,7 +288,7 @@ class OptionalWorkflowTests(unittest.TestCase):
             prepare.assert_not_called()
 
     def test_credential_input_is_blocked_before_graph_creation(self):
-        with patch.dict("os.environ", {"OPENROUTER_API_KEY": KEY}), patch("doclens.workflow._build_graph") as build:
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": KEY}), patch("doclens.legacy.workflow._build_graph") as build:
             with self.assertRaises(GenerationError) as failure:
                 run_workflow(Path("not-read"), KEY, version="3.13", root=Path.cwd(), config=CONFIG)
             self.assertEqual(failure.exception.kind, "secret_redaction")

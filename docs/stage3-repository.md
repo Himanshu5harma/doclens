@@ -1,5 +1,7 @@
 # Stage 3, unit 1: a pinned repository file
 
+> Module paths and commands in this guide use the unified package layout introduced on 2026-11-18 ([module map](architecture.md#module-map)). Line numbers cited before that date refer to the earlier file layout.
+
 This unit adds one public GitHub source and one Python-code format to the authenticated ingestion service. It reuses Stage 2 jobs, bounded retries, claim fencing, immutable artifacts and workspace authorization. It does not add service embeddings/search/answers, public reader grants, Markdown/issues/PDF adapters, Git checkout or LangGraph behavior.
 
 ## Why this source
@@ -56,14 +58,14 @@ uv sync --extra service --extra worker --group dev
 uv run --extra service --extra worker python scripts/stage2_dev.py prepare
 docker compose -f compose.stage1.yaml -f compose.stage2.yaml up -d
 uv run --extra service --extra worker python scripts/stage1_dev.py bootstrap
-uv run --extra service --extra worker uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra service --extra worker uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 ```
 
 In separate terminals run the worker and dispatcher, then register:
 
 ```bash
-uv run --extra service --extra worker python -m doclens.service.worker worker
-uv run --extra service --extra worker python -m doclens.service.worker dispatch
+uv run --extra service --extra worker python -m doclens.worker worker
+uv run --extra service --extra worker python -m doclens.worker dispatch
 uv run --extra service --extra worker python scripts/stage3_dev.py register
 ```
 

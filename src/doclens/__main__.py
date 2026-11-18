@@ -10,16 +10,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from doclens import __version__
-from doclens.answer_evaluation import run_answer_sample
-from doclens.answers import answer_question, display_answer, prepare_question
-from doclens.chunk import ChunkPolicy, chunk_source
-from doclens.embeddings import LocalEncoder, load_embedding_config
-from doclens.evaluation import run_evaluation
-from doclens.fetch import fetch_source
-from doclens.generation import GenerationError, load_generation_config
-from doclens.manifest import load_sources
-from doclens.parse import parse_source
-from doclens.retrieval import build_index, collect_chunks, search_index
+from doclens.legacy.answer_evaluation import run_answer_sample
+from doclens.answers.grounding import answer_question
+from doclens.legacy.answers import display_answer, prepare_question
+from doclens.domain.chunking import ChunkPolicy
+from doclens.legacy.chunk import chunk_source
+from doclens.retrieval.embeddings import LocalEncoder, load_embedding_config
+from doclens.legacy.evaluation import run_evaluation
+from doclens.legacy.fetch import fetch_source
+from doclens.answers.ports import GenerationError, load_generation_config
+from doclens.legacy.manifest import load_sources
+from doclens.legacy.parse import parse_source
+from doclens.legacy.retrieval import build_index, collect_chunks, search_index
 
 
 def main() -> None:
@@ -98,7 +100,7 @@ def main() -> None:
                 from dataclasses import replace
                 config = replace(config, model_id=args.model)
             if args.workflow == "graph":
-                from doclens.workflow import run_workflow
+                from doclens.legacy.workflow import run_workflow
 
                 def trace(event):
                     print(json.dumps(event, ensure_ascii=False), file=sys.stderr, flush=True)

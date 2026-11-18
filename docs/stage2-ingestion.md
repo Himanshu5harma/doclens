@@ -1,5 +1,7 @@
 # Stage 2: recoverable source ingestion
 
+> Module paths and commands in this guide use the unified package layout introduced on 2026-11-18 ([module map](architecture.md#module-map)). Line numbers cited before that date refer to the earlier file layout.
+
 Implemented and locally verified on 2026-11-04; reviewed fixes verified on 2026-11-05 (Asia/Kolkata). An authenticated owner/editor can sync a registered source, inspect its durable job, and download a verified raw/normalized pair. This unit supports official Python 3.12/3.13 HTML pages only. It reuses the existing Python/Sphinx parser and leaves the baseline corpus, chunks, SQLite index, evaluations, answer client and optional graph in place. It adds no new source format, embeddings, search, answer endpoint or public reader.
 
 ## What the user does, and why a job exists
@@ -83,7 +85,7 @@ HTTPX has explicit five-second connection/read/write/pool timeouts. A 30-second 
 
 The local `ArtifactStore` delegates file operations to the standard library. It creates a complete temporary file, fsyncs it, links it atomically into a hash-named path without overwriting existing content, and verifies size/SHA-256. The server constructs workspace/source/job/claim paths; callers supply no filesystem path. There is no cloud storage SDK or storage-engine implementation. API artifacts are attachments with `nosniff`/`no-store`; raw HTML is served as `application/octet-stream`, not executable inline HTML.
 
-Normalized `doclens-service-document-v1` JSON retains source ID/workspace/product/version/purpose/URL/terms, revision ID, fetch time/final URL/raw hash, processing policy and parser information, plus title, heading paths, anchors, typed blocks and exact code whitespace. The `python-sphinx-service-v1` wrapper adapts [parse_html](../src/doclens/parse.py), retaining its parser contract rather than copying its extraction algorithm. This is still the observed Python/Sphinx layout: images, complex-table relationships and arbitrary HTML are not claimed.
+Normalized `doclens-service-document-v1` JSON retains source ID/workspace/product/version/purpose/URL/terms, revision ID, fetch time/final URL/raw hash, processing policy and parser information, plus title, heading paths, anchors, typed blocks and exact code whitespace. The `python-sphinx-service-v1` wrapper adapts [parse_html](../src/doclens/sources/python_docs.py), retaining its parser contract rather than copying its extraction algorithm. This is still the observed Python/Sphinx layout: images, complex-table relationships and arbitrary HTML are not claimed.
 
 ## Access and process credentials
 
@@ -117,9 +119,9 @@ Preparation reuses existing DB/IdP credentials and adds separate random worker/b
 Run each command in its own terminal from the repository root:
 
 ```bash
-uv run --extra service --extra worker uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
-uv run --extra service --extra worker python -m doclens.service.worker worker
-uv run --extra service --extra worker python -m doclens.service.worker dispatch
+uv run --extra service --extra worker uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra service --extra worker python -m doclens.worker worker
+uv run --extra service --extra worker python -m doclens.worker dispatch
 ```
 
 List/register sources using the [Stage 1 commands](stage1-workspaces.md#run-and-inspect). A repeated example registration returns 409; reuse the listed source ID. For the existing local demonstration, the registered Python 3.13 pathlib source is `40d3785f-8a48-40df-b26e-99a9d2e7e196`. Fresh databases return a different source ID. Replace it with your actual registration ID:
@@ -173,7 +175,7 @@ This is local behavior verification, not independent human review, a penetration
 
 The added regressions cover four slow publishes with concurrent production-config DB claims, dispatcher interruption after reservation, fast worker retry before publisher completion, and an older publisher returning after a newer delivery. URL tests reject oversized UTF-8 inputs with 422, persist the exact 2,048-byte boundary with maximum-length scope strings, and preserve reads of previously accepted oversized/compressible URLs. New registration URLs/terms links have a 2,048-UTF-8-byte input budget; shared `SourceFields` plus separate `SourceCreate`/`SourceRead` validation preserves existing stored records without changing identities or adding a migration. No public document was downloaded again for the fixes; the earlier public-page smoke report remains the recorded acquisition evidence.
 
-Follow the important code in order: [sync/job/artifact routes](../src/doclens/service/ingestion_api.py) → [claim/run/publish/dispatch](../src/doclens/service/ingestion.py) → [HTTPX/artifact adapter](../src/doclens/service/ingestion_io.py) → [Celery configuration/process entry point](../src/doclens/service/worker.py). `sessionmaker.begin()` commits on a successful exit and rolls back on an exception; Python context managers also close HTTP streams/files/sessions. The immutable `Claim` dataclass carries execution identity without a client/session/credential in the task message.
+Follow the important code in order: [sync/job/artifact routes](../src/doclens/api/ingestion.py) → [claim/run/publish/dispatch](../src/doclens/ingestion/jobs.py) → [HTTPX/artifact adapter](../src/doclens/sources/python_docs.py) → [Celery configuration/process entry point](../src/doclens/worker/celery_app.py). `sessionmaker.begin()` commits on a successful exit and rolls back on an exception; Python context managers also close HTTP streams/files/sessions. The immutable `Claim` dataclass carries execution identity without a client/session/credential in the task message.
 
 Understanding exercise: explain why the API can safely return 202 while Redis is unavailable, and why a stale worker needs a claim-token check even after the lease expires. Trace where the previous ready revision survives a parse or publication failure. Do not equate the test count with having understood those transactions.
 

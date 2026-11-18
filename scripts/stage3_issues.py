@@ -8,11 +8,13 @@ import sys
 import httpx
 
 from stage1_dev import ALIASES, ROOT, token
-from doclens.service.issue_export import (CURATION_PATH, EXPECTED_SHA256, REGISTRATION,
-    SOURCE_URL, issue_source_metadata, load_export, parse_issue_export)
-from doclens.service.ingestion_io import ArtifactStore
-from doclens.service.schemas import SourceCreate
-from doclens.service.settings import WorkerSettings
+from doclens.sources.issue_export import (
+    CURATION_PATH, EXPECTED_SHA256, REGISTRATION, SOURCE_URL, issue_source_metadata, load_export,
+    parse_issue_export,
+)
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.api.schemas import SourceCreate
+from doclens.settings import WorkerSettings
 
 
 def reviewed_bytes():

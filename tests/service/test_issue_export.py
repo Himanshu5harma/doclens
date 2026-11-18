@@ -8,9 +8,10 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from doclens.service import issue_export as issue
-from doclens.service.ingestion_io import ArtifactStore, IngestionError
-from doclens.service.schemas import SourceCreate
+from doclens.sources import issue_export as issue
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.base import IngestionError
+from doclens.api.schemas import SourceCreate
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = (ROOT / issue.CURATION_PATH).read_bytes()

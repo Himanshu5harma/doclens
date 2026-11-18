@@ -13,11 +13,14 @@ from sqlalchemy import event, func, insert, select, text, update
 from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy.orm import sessionmaker
 
-from doclens.service.ingestion import (LostClaim, claim_job, dispatch_once, progress,
-                                      publish_revision, run_job, utcnow)
-from doclens.service.ingestion_io import ArtifactStore, IngestionError, Snapshot
-from doclens.service.models import (DispatchIntent, IngestionJob, Membership, RegisteredSource,
-                                    SourcePublication, SourceRevision)
+from doclens.ingestion.jobs import (
+    LostClaim, claim_job, dispatch_once, progress, publish_revision, run_job, utcnow,
+)
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.base import IngestionError, Snapshot
+from doclens.db.models import (
+    DispatchIntent, IngestionJob, Membership, RegisteredSource, SourcePublication, SourceRevision,
+)
 
 HTML = b'<main><section id="fixture"><h1>Synthetic ingestion fixture</h1><p>Reference.</p><pre>if True:\n    print("ok")\n</pre></section></main>'
 
@@ -144,7 +147,7 @@ def test_current_membership_removal_blocks_existing_artifact_token(api, headers,
     job = enqueue(api, headers, case); execute(case, job)
     revision = api.get(case["path"] + "/revision", headers=headers("atlas-owner")).json()
     auth = headers("atlas-viewer")
-    from doclens.service.models import Principal
+    from doclens.db.models import Principal
     identity = api.app.state.verifier.verify(auth["Authorization"].removeprefix("Bearer "))
     with real_services.owner.begin() as con:
         pid = con.scalar(select(Principal.id).where(Principal.subject == identity.subject, Principal.issuer == identity.issuer))

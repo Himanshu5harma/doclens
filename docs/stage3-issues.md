@@ -1,5 +1,7 @@
 # Stage 3, unit 2: a curated historical issue export
 
+> Module paths and commands in this guide use the unified package layout introduced on 2026-11-18 ([module map](architecture.md#module-map)). Line numbers cited before that date refer to the earlier file layout.
+
 This unit adds structured issue JSON to the existing authenticated ingestion service. It reuses source ownership, jobs/dispatch, bounded attempts, claim fencing, immutable artifacts and scoped reads. Its source is a reviewed local export; it is not a general GitHub/Jira ticket connector, arbitrary upload endpoint or live issue crawl. Service indexing/retrieval/answers and public visitor access remain later stages.
 
 ## Why this source and what it can establish
@@ -59,14 +61,14 @@ uv run --extra service --extra worker python scripts/stage2_dev.py prepare
 docker compose -f compose.stage1.yaml -f compose.stage2.yaml up -d
 uv run --extra service --extra worker python scripts/stage1_dev.py bootstrap
 uv run --extra service --extra worker python scripts/stage3_issues.py prepare
-uv run --extra service --extra worker uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra service --extra worker uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 ```
 
 In separate terminals run worker/dispatcher, then register:
 
 ```bash
-uv run --extra service --extra worker python -m doclens.service.worker worker
-uv run --extra service --extra worker python -m doclens.service.worker dispatch
+uv run --extra service --extra worker python -m doclens.worker worker
+uv run --extra service --extra worker python -m doclens.worker dispatch
 uv run --extra service --extra worker python scripts/stage3_issues.py register
 ```
 

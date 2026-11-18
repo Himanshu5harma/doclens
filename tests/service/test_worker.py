@@ -15,10 +15,10 @@ redis = pytest.importorskip("redis")
 from pydantic import SecretStr
 from sqlalchemy import func, select, update
 
-from doclens.service.ingestion import dispatch_once, utcnow
-from doclens.service.models import DispatchIntent, IngestionJob, RegisteredSource, SourceRevision
-from doclens.service.settings import WorkerSettings
-from doclens.service.worker import create_worker, sender
+from doclens.ingestion.jobs import dispatch_once, utcnow
+from doclens.db.models import DispatchIntent, IngestionJob, RegisteredSource, SourceRevision
+from doclens.settings import WorkerSettings
+from doclens.worker.celery_app import create_worker, sender
 
 
 class Harness:
@@ -108,7 +108,7 @@ def make_due(real, job, *, expire=False):
 
 
 def test_real_worker_routes_repository_job_and_preserves_v2_locations(api, headers, ingestion_case, real_services, worker_harness):
-    from doclens.service.repository import COMMIT, REGISTRATION, SOURCE_URL
+    from doclens.sources.repository import COMMIT, REGISTRATION, SOURCE_URL
     case, harness = ingestion_case, worker_harness
     # The disposable test DB has one curated repo registration in this workspace.
     with real_services.owner.begin() as con:
@@ -129,8 +129,8 @@ def test_real_worker_routes_repository_job_and_preserves_v2_locations(api, heade
 
 
 def test_real_worker_ingests_reviewed_frozen_issue_export(api, headers, ingestion_case, real_services, worker_harness):
-    from doclens.service.issue_export import CURATION_PATH, REGISTRATION, SOURCE_URL
-    from doclens.service.ingestion_io import ArtifactStore
+    from doclens.sources.issue_export import CURATION_PATH, REGISTRATION, SOURCE_URL
+    from doclens.ingestion.artifacts import ArtifactStore
     case, harness = ingestion_case, worker_harness
     with real_services.owner.begin() as con:
         con.execute(update(RegisteredSource).where(RegisteredSource.id == UUID(case["source_id"])).values(**REGISTRATION))

@@ -33,6 +33,7 @@ Act as a senior applied-AI engineer and Python backend architect who teaches han
 ## Technical direction
 
 - Follow the current expanded stages: plan → authenticated workspace/source ownership → recoverable ingestion → source/format units → scoped retrieval → direct answer API → document/access lifecycle → measured retrieval experiments → operations/recovery → useful LangGraph investigation. Earlier baseline milestones are retained as history. The old Markdown-before-workspace recommendation is superseded.
+- DocLens is one project, not a baseline CLI plus a separate service (user decision, 2026-11-18). Follow the layered ports-and-adapters layout in `docs/architecture.md#module-map`: pure `domain/`, application packages `sources/`, `ingestion/`, `retrieval/`, `answers/`, thin `api/`/`worker/`/CLI interfaces, dependencies pointing inward. PostgreSQL/pgvector is the single store (user decision); `legacy/` holds the SQLite/file pipeline until steps 2–4 of the migration plan replace it. Put new code in its layer; do not add new features to `legacy/`.
 - Keep expanded RAG a direct Python pipeline until it works and has been evaluated. Preserve the optional graph already implemented; do not expand it automatically.
 - Use Python 3.12+ and `uv`. Prefer established libraries for commodity components, retaining standard-library/existing custom code where it fits. Before each feature document the package, delegated responsibility, remaining application logic, alternatives, exact verified compatible version, official docs, licensing/model terms, resources/operations, and actual API checks. Lock tested versions when needed; do not install the entire proposed stack in advance.
 - The planned stack and ownership boundaries are in `docs/expanded-rag-plan.md`: FastAPI/Pydantic/settings; PostgreSQL/SQLAlchemy/psycopg/Alembic; OIDC/PyJWT[crypto]; Celery/Redis; HTTPX/GitPython; Beautiful Soup/markdown-it-py/Docling; applicable LangChain loaders/text splitters; existing Sentence Transformers; pgvector; OpenAI SDK explicitly pointed at OpenRouter; pytest and later OpenTelemetry/static checks/Compose. These are not claims of installed or tested integrations. Use LangChain as the main reusable RAG ecosystem without adding overlapping LlamaIndex infrastructure.
@@ -47,7 +48,7 @@ Act as a senior applied-AI engineer and Python backend architect who teaches han
 - Measure visitor task usefulness/feedback and semantic answer support separately from structural/backend tests. Proposed public questions, source candidates and first-visit success criteria are unmeasured until actually verified. Closed issues/accepted comments alone do not prove a fix; record source terms, release relevance, revisions and authority. Do not fabricate incidents, users, feedback or independent validation.
 - Read `evals/README.md` before evaluation work. Use meaningful, proportionate validation for implementation changes; documentation-only changes need no application tests.
 - Default evaluation to the development split. Preserve held-out retrieval outputs during tuning, and do not claim assistant-authored labels have had independent human review.
-- Preserve the existing Python corpus, SQLite index, frozen labels/reports and held-out reservation as references. New service records/sources/indexes/evaluations use separate explicit schemas/versions/artifacts with compatibility/migration plans. Do not rebuild/tune the frozen baseline unnecessarily or silently relabel it with workspaces. Do not open or run held-out questions during development; byte-hash preservation checks are allowed.
+- Preserve the existing Python corpus, frozen SQLite index file, frozen labels/reports and held-out reservation as historical references. Retiring the SQLite code path (migration step 4) does not delete these artifacts. New service records/sources/indexes/evaluations use separate explicit schemas/versions/artifacts with compatibility/migration plans. Do not rebuild/tune the frozen baseline unnecessarily or silently relabel it with workspaces. Do not open or run held-out questions during development; byte-hash preservation checks are allowed.
 - The direct answer pipeline uses an explicit OpenRouter :free model with current price checks and no paid routing/fallback. The planned SDK adapter must keep explicit timeouts, `max_retries=0`, zero-price caps, redaction and model/finish/usage/latency checks; test it before replacement. Keep provider/invalid-response failures distinct from insufficient evidence. Preserve the earlier live baseline review, pending v2 live improvement, and independent-review limits. Expanded live generation must be verified before calling expanded RAG complete.
 - Use public/synthetic demonstration content with the current free provider; do not send private/customer data. Label synthetic runbooks/tickets in content and metadata. A real private deployment requires a separate provider/privacy decision. No paid infrastructure, model downloads or provider calls merely for planning.
 - New tests use pytest while retaining unittest coverage; real PostgreSQL and later worker/broker integration checks must exercise the claims made. Basic tests/redacted logs/settings/migrations start with their feature; operations/recovery evidence is required before claiming production readiness. Documentation-only changes need no application test rerun.
@@ -89,21 +90,21 @@ uv sync --extra service --group dev
 uv run --extra service python scripts/stage1_dev.py prepare
 docker compose -f compose.stage1.yaml up -d
 uv run --extra service python scripts/stage1_dev.py bootstrap
-uv run --extra service uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra service uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 uv run --extra service python scripts/stage1_dev.py request /api/v1/workspaces
 DOCLENS_RUN_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service python -m pytest tests -q
 uv sync --extra service --extra worker --group dev
 uv run --extra service --extra worker python scripts/stage2_dev.py prepare
 docker compose -f compose.stage1.yaml -f compose.stage2.yaml up -d
 uv run --extra service --extra worker python scripts/stage1_dev.py bootstrap
-uv run --extra service --extra worker python -m doclens.service.worker worker
-uv run --extra service --extra worker python -m doclens.service.worker dispatch
+uv run --extra service --extra worker python -m doclens.worker worker
+uv run --extra service --extra worker python -m doclens.worker dispatch
 uv run --extra service --extra worker python scripts/stage3_dev.py register
 uv run --extra service --extra worker python scripts/stage3_issues.py inspect
 uv run --extra service --extra worker python scripts/stage3_issues.py prepare
 uv run --extra service --extra worker python scripts/stage3_issues.py register
 DOCLENS_RUN_INTEGRATION=1 DOCLENS_RUN_WORKER_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service --extra worker python -m pytest tests -q
-uv run --extra retrieval --extra service python -m doclens.service.indexer --env-file .env.worker.local
+uv run --extra retrieval --extra service python -m doclens.worker.indexer --env-file .env.worker.local
 uv run --extra retrieval --extra service python scripts/stage4_eval.py
 ```
 

@@ -15,10 +15,11 @@ from sqlalchemy import delete, func, insert, select, text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker
 
-from doclens.service.ingestion import run_job, utcnow
-from doclens.service.ingestion_io import ArtifactStore, Snapshot
-from doclens.service.models import Membership, RetrievalChunk, RevisionIndex, Workspace
-from doclens.service.retrieval_index import RetrievalConfig, index_revision, search_scope
+from doclens.ingestion.jobs import run_job, utcnow
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.base import Snapshot
+from doclens.db.models import Membership, RetrievalChunk, RevisionIndex, Workspace
+from doclens.retrieval.index import RetrievalConfig, index_revision, search_scope
 from retrieval_fixtures import CONFIG, HashingEncoder
 
 PAGE = ('<main><section id="uri"><h1>Synthetic retrieval fixture {tag}</h1>'
@@ -155,7 +156,7 @@ def test_revocation_applies_inside_the_ranking_statement(api, headers, workspace
     _, revision_id = publish(api, headers, case, alpha, "atlas-owner")
     index(case, revision_id)
     identity = real_services.dev  # Resolve the viewer's real issuer/subject from its token.
-    from doclens.service.auth import TokenVerifier
+    from doclens.access.tokens import TokenVerifier
     viewer = TokenVerifier(real_services.settings).verify(identity.token("atlas-viewer"))
     vector = HashingEncoder().encode(["file URI"], query=True)[0]
     with sessionmaker(real_services.runtime)() as session:

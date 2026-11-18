@@ -5,7 +5,7 @@ import os
 from alembic import context
 from sqlalchemy import create_engine, pool
 
-from doclens.service.models import Base, SCHEMA
+from doclens.db.models import Base, SCHEMA
 
 
 url = os.environ.get("DOCLENS_MIGRATION_DATABASE_URL")

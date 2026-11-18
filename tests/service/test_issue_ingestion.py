@@ -8,10 +8,10 @@ import pytest
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import sessionmaker
 
-from doclens.service.ingestion import run_job
-from doclens.service.ingestion_io import ArtifactStore
-from doclens.service.issue_export import CURATION_PATH, REGISTRATION, EXPECTED_SHA256
-from doclens.service.models import Membership, SourceRevision, Workspace
+from doclens.ingestion.jobs import run_job
+from doclens.ingestion.artifacts import ArtifactStore
+from doclens.sources.issue_export import CURATION_PATH, REGISTRATION, EXPECTED_SHA256
+from doclens.db.models import Membership, SourceRevision, Workspace
 
 CONTENT = (Path(__file__).resolve().parents[2] / CURATION_PATH).read_bytes()
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import UUID, uuid4, uuid5, NAMESPACE_URL
 
-from doclens.embeddings import load_embedding_config
+from doclens.retrieval.embeddings import load_embedding_config
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = load_embedding_config(ROOT / "configs/retrieval.json")

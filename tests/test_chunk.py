@@ -12,9 +12,10 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from doclens.__main__ import main
-from doclens.chunk import ChunkPolicy, chunk_document, chunk_source
-from doclens.parse import parse_source
-from doclens.records import BlockKind, document_from_dict
+from doclens.domain.chunking import ChunkPolicy, chunk_document
+from doclens.legacy.chunk import chunk_source
+from doclens.legacy.parse import parse_source
+from doclens.domain.records import BlockKind, document_from_dict
 
 
 CONTEXT = "Guide > Details\napi.run\n\n"
@@ -276,7 +277,7 @@ class ChunkFileTests(unittest.TestCase):
         output = io.StringIO()
         args = ["doclens", "chunk", "--manifest", str(self.manifest), "--source-id", self.source["source_id"]]
         with patch("sys.argv", args), patch("doclens.__main__.Path.cwd", return_value=self.root):
-            with patch("doclens.fetch.urlopen", side_effect=AssertionError("Chunking must stay offline")):
+            with patch("doclens.legacy.fetch.urlopen", side_effect=AssertionError("Chunking must stay offline")):
                 with redirect_stdout(output):
                     main()
         self.assertIn("Wrote 1 chunks from 1 sources", output.getvalue())

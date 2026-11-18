@@ -11,14 +11,15 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 from doclens.__main__ import main
-from doclens.answers import (
-    PROMPT_POLICY_ID, AnswerStatus, answer_question, assemble_evidence, display_answer, prepare_question, validate_answer,
+from doclens.answers.grounding import (
+    PROMPT_POLICY_ID, AnswerStatus, answer_question, assemble_evidence, validate_answer,
 )
-from doclens.chunk import ChunkPolicy
-from doclens.embeddings import EmbeddingConfig
-from doclens.generation import Completion, GenerationConfig, GenerationError
-from doclens.records import BlockKind, Chunk, ChunkPiece, SearchResponse, SearchResult, Source
-from doclens.retrieval import build_index
+from doclens.legacy.answers import display_answer, prepare_question
+from doclens.domain.chunking import ChunkPolicy
+from doclens.retrieval.embeddings import EmbeddingConfig
+from doclens.answers.ports import Completion, GenerationConfig, GenerationError
+from doclens.domain.records import BlockKind, Chunk, ChunkPiece, SearchResponse, SearchResult, Source
+from doclens.legacy.retrieval import build_index
 
 
 CONFIG = GenerationConfig()

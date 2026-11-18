@@ -7,8 +7,8 @@ import sys
 import httpx
 
 from stage1_dev import ALIASES, ROOT, token
-from doclens.service.repository import REGISTRATION, source_metadata
-from doclens.service.schemas import SourceCreate
+from doclens.sources.repository import REGISTRATION, source_metadata
+from doclens.api.schemas import SourceCreate
 
 
 def main():

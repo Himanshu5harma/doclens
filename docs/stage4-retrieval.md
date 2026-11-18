@@ -1,5 +1,7 @@
 # Stage 4 — scoped persistent retrieval (PostgreSQL + pgvector)
 
+> Module paths and commands in this guide use the unified package layout introduced on 2026-11-18 ([module map](architecture.md#module-map)). Line numbers cited before that date refer to the earlier file layout.
+
 Status, 2026-11-15: **implemented and verified locally** on PostgreSQL 18.7 / pgvector 0.8.7 with real Keycloak tokens: `alembic check` clean, 8 real-DB + 16 offline Stage 4 tests passing, and a dev comparison with identical rankings to SQLite on a re-fetched snapshot ([results](../evals/stage4-pgvector-dev.md)).
 
 ## User behavior
@@ -44,10 +46,10 @@ search: membership(issuer,subject) ∧ workspace ∧ current publication ∧ pro
 ## Code map
 
 - `migrations/versions/0005_retrieval_index.py` — verifies extension, creates `revision_indexes`, `retrieval_chunks`, scope index, grants.
-- `src/doclens/service/models.py` — `RevisionIndex`, `RetrievalChunk`.
-- `src/doclens/service/retrieval_index.py` — `RetrievalConfig`, `service_document`, `prepare_revision`, `index_revision`, `pending_revisions`, `search_scope`.
-- `src/doclens/service/indexer.py` — `python -m doclens.service.indexer` (worker credentials).
-- `src/doclens/service/retrieval_api.py` — the search route.
+- `src/doclens/db/models.py` — `RevisionIndex`, `RetrievalChunk`.
+- `src/doclens/retrieval/index.py` — `RetrievalConfig`, `service_document`, `prepare_revision`, `index_revision`, `pending_revisions`, `search_scope`.
+- `src/doclens/worker/indexer.py` — `python -m doclens.worker.indexer` (worker credentials).
+- `src/doclens/api/search.py` — the search route.
 - `scripts/stage4_eval.py` — disposable-DB dev evaluation vs SQLite (see below).
 - `scripts/stage1_dev.py` — provisioning now also runs `CREATE EXTENSION IF NOT EXISTS vector`.
 
@@ -57,8 +59,8 @@ search: membership(issuer,subject) ∧ workspace ∧ current publication ∧ pro
 uv sync --extra service --extra worker --extra retrieval --group dev
 docker compose -f compose.stage1.yaml -f compose.stage2.yaml up -d
 uv run --extra service --extra worker python scripts/stage1_dev.py bootstrap
-uv run --extra retrieval --extra service python -m doclens.service.indexer --env-file .env.worker.local
-uv run --extra retrieval --extra service uvicorn doclens.service.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
+uv run --extra retrieval --extra service python -m doclens.worker.indexer --env-file .env.worker.local
+uv run --extra retrieval --extra service uvicorn doclens.api.app:create_app --factory --host 127.0.0.1 --port 18000 --env-file .env.service.local --no-access-log
 DOCLENS_RUN_INTEGRATION=1 uv run --extra retrieval --extra graph --extra service python -m pytest tests -q
 uv run --extra retrieval --extra service python scripts/stage4_eval.py
 ```

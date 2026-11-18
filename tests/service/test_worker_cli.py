@@ -19,7 +19,7 @@ def test_unavailable_broker_startup_exits_nonzero(tmp_path):
     env = {name: value for name, value in os.environ.items() if not name.startswith("DOCLENS_")}
     log = tmp_path / "worker.log"
     with log.open("wb") as stream:
-        process = subprocess.Popen([sys.executable, "-m", "doclens.service.worker", "worker", "--env-file", str(config)],
+        process = subprocess.Popen([sys.executable, "-m", "doclens.worker", "worker", "--env-file", str(config)],
             env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             process.wait(timeout=18)

@@ -13,11 +13,11 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from doclens.__main__ import main
-from doclens.chunk import ChunkPolicy, chunk_document
-from doclens.embeddings import EmbeddingConfig, LocalEncoder, unit_vector
-from doclens.parse import parse_html
-from doclens.records import document_from_dict
-from doclens.retrieval import build_index, search_index
+from doclens.domain.chunking import ChunkPolicy, chunk_document
+from doclens.retrieval.embeddings import EmbeddingConfig, LocalEncoder, unit_vector
+from doclens.sources.python_docs import parse_html
+from doclens.domain.records import document_from_dict
+from doclens.legacy.retrieval import build_index, search_index
 
 
 CONFIG = EmbeddingConfig("test/encoder", "a" * 40, 3, 100, "search_document: ", "search_query: ")
@@ -143,7 +143,7 @@ class RetrievalTests(unittest.TestCase):
 
     def test_failed_sqlite_build_preserves_previous_index(self):
         before = self.path.read_bytes()
-        with patch("doclens.retrieval.sqlite3.connect", side_effect=sqlite3.OperationalError("simulated failure")):
+        with patch("doclens.legacy.retrieval.sqlite3.connect", side_effect=sqlite3.OperationalError("simulated failure")):
             with self.assertRaises(sqlite3.Error):
                 self.build()
         self.assertEqual(self.path.read_bytes(), before)
@@ -168,7 +168,7 @@ class RetrievalTests(unittest.TestCase):
     def test_cli_search_returns_inspectable_json(self):
         output = io.StringIO()
         args = ["doclens", "search", "question", "--version", "3.13", "--index", str(self.path), "--json"]
-        with patch("sys.argv", args), patch("doclens.retrieval.LocalEncoder", return_value=self.encoder):
+        with patch("sys.argv", args), patch("doclens.legacy.retrieval.LocalEncoder", return_value=self.encoder):
             with redirect_stdout(output):
                 main()
         data = json.loads(output.getvalue())

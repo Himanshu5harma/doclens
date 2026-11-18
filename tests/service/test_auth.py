@@ -6,9 +6,9 @@ from jwt.exceptions import PyJWKClientConnectionError
 import pytest
 
 from conftest import FixtureKeys
-from doclens.service.app import create_app
-from doclens.service.auth import AuthenticationError, IdentityProviderUnavailable, TokenVerifier
-from doclens.service.settings import ServiceSettings
+from doclens.api.app import create_app
+from doclens.access.tokens import AuthenticationError, IdentityProviderUnavailable, TokenVerifier
+from doclens.settings import ServiceSettings
 
 
 def claims(settings):

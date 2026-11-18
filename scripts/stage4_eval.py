@@ -40,18 +40,20 @@ from sqlalchemy.orm import sessionmaker
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from doclens.chunk import ChunkPolicy, chunk_document  # noqa: E402
-from doclens.embeddings import LocalEncoder, load_embedding_config  # noqa: E402
-from doclens.evaluation import load_catalog, run_evaluation  # noqa: E402
-from doclens.manifest import load_sources  # noqa: E402
-from doclens.records import SearchResponse, SearchResult, Source, document_from_dict  # noqa: E402
-from doclens.retrieval import search_index  # noqa: E402
-from doclens.service.indexer import run as run_indexer  # noqa: E402
-from doclens.service.ingestion import run_job  # noqa: E402
-from doclens.service.ingestion_io import ArtifactStore, Snapshot  # noqa: E402
-from doclens.service.models import (DispatchIntent, IngestionJob, Membership, Principal,  # noqa: E402
-                                    RegisteredSource, RetrievalChunk, Workspace)
-from doclens.service.retrieval_index import RetrievalConfig, search_scope  # noqa: E402
+from doclens.domain.chunking import ChunkPolicy, chunk_document  # noqa: E402
+from doclens.retrieval.embeddings import LocalEncoder, load_embedding_config  # noqa: E402
+from doclens.legacy.evaluation import load_catalog, run_evaluation  # noqa: E402
+from doclens.legacy.manifest import load_sources  # noqa: E402
+from doclens.domain.records import SearchResponse, SearchResult, Source, document_from_dict  # noqa: E402
+from doclens.legacy.retrieval import search_index  # noqa: E402
+from doclens.worker.indexer import run as run_indexer  # noqa: E402
+from doclens.ingestion.jobs import run_job  # noqa: E402
+from doclens.ingestion.artifacts import ArtifactStore  # noqa: E402
+from doclens.sources.base import Snapshot  # noqa: E402
+from doclens.db.models import (
+    DispatchIntent, IngestionJob, Membership, Principal, RegisteredSource, RetrievalChunk, Workspace,
+)
+from doclens.retrieval.index import RetrievalConfig, search_scope  # noqa: E402
 
 ISSUER, SUBJECT = "urn:doclens:stage4-eval", "synthetic-evaluator"
 
