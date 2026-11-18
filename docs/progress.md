@@ -1,6 +1,6 @@
 # Current learning checkpoint
 
-Last updated: 2026-11-16 (Asia/Kolkata).
+Last updated: 2026-11-18 (Asia/Kolkata).
 
 ## Goal and working agreement
 
@@ -11,6 +11,12 @@ The product has two simultaneous goals: useful public answers for actual enginee
 Public descriptions focus on DocLens's purpose and honest capabilities, rather than calling it a portfolio project. Learning goals remain in the roadmap, learning notes, and assistant instructions. Read `AGENTS.md` for the full working agreement and resume here without asking the user to explain the project again.
 
 ## Current checkpoint: Stage 4 scoped persistent retrieval verified locally; stop before Stage 5
+
+### README refresh, 2026-11-18 (documentation only)
+
+The user said DocLens is meant to be highlighted in their portfolio and chose a README refresh before Stage 5. Rewrote `README.md` for readers who skim: a one-paragraph pitch, capability bullets, a Mermaid architecture diagram, a results table linking existing evidence (baseline dev metrics, Stage 4 pgvector parity, live four-case review, test counts with platform noted), an explicit limits paragraph, a corrected stage table (Stages 3/4 were stale as "next"/"planned"; Stage 5 is now marked next), a tech stack table, condensed quick-start/test commands, and a documentation map. Detailed per-command baseline explanations now live only in the existing guides (`corpus.md`, `chunking.md`, `retrieval.md`, `answers.md`), which the README links to. It does not call DocLens a portfolio project. No figures were added beyond those already recorded. Verified: all local README links/anchors resolve, code fences are balanced, `git diff --check` passes. No application tests were run (documentation only). Nothing has been committed.
+
+Remaining portfolio gaps (recommendations, not started): Stage 5 answer API; CI badge running offline tests; Windows portability fixes; a recorded demo or minimal visitor view (Stage 8); a LICENSE file for DocLens's own code (the user's choice).
 
 ### Merge and learning checkpoint, 2026-11-16
 
